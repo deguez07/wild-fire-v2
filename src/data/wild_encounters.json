@@ -16436,7 +16436,7 @@
           "map": "MAP_ROUTE1",
           "base_label": "sRoute1_FireRed",
           "land_mons": {
-            "encounter_rate": 21,
+            "encounter_rate": 50,
             "mons": [
               {
                 "min_level": 5,
@@ -16505,7 +16505,7 @@
           "map": "MAP_ROUTE1",
           "base_label": "sRoute1_LeafGreen",
           "land_mons": {
-            "encounter_rate": 21,
+            "encounter_rate": 50,
             "mons": [
               {
                 "min_level": 5,
