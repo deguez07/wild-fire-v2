@@ -75,6 +75,10 @@ BattleScript_SuccessBallThrow::
 	incrementgamestat GAME_STAT_POKEMON_CAPTURES
 BattleScript_SafariNoIncGameStat::
 	printstring STRINGID_GOTCHAPKMNCAUGHT
+	@ Award the same exp as defeating the mon, before the dex/nickname screens
+	@ (getexp skips Safari/link/etc. by itself)
+	setbyte sGIVEEXP_STATE, 0
+	getexp BS_TARGET
 	trysetcaughtmondexflags BattleScript_CaughtPokemonSkipNewDex
 	printstring STRINGID_PKMNDATAADDEDTODEX
 	waitstate
