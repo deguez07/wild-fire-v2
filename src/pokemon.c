@@ -8,6 +8,7 @@
 #include "battle.h"
 #include "battle_anim.h"
 #include "item.h"
+#include "item_use.h"
 #include "event_data.h"
 #include "util.h"
 #include "pokemon_storage_system.h"
@@ -4050,9 +4051,24 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
         battleMonId = MAX_BATTLERS_COUNT;
     }
 
-    // Skip using the item if it won't do anything
+    // Former trade-with-held-item evolution items (King's Rock, Metal Coat, etc.) are not in the
+    // item effect table. They only evolve a Pokémon when used on it directly.
     if (!IS_POKEMON_ITEM(item))
+    {
+        if (ItemId_GetFieldFunc(item) == FieldUseFunc_EvoItem)
+        {
+            u16 targetSpecies = GetEvolutionTargetSpecies(mon, EVO_MODE_ITEM_USE, item);
+
+            if (targetSpecies != SPECIES_NONE)
+            {
+                BeginEvolutionScene(mon, targetSpecies, FALSE, partyIndex);
+                return FALSE;
+            }
+        }
         return TRUE;
+    }
+
+    // Skip using the item if it won't do anything
     if (gItemEffectTable[item - ITEM_POTION] == NULL && item != ITEM_ENIGMA_BERRY)
         return TRUE;
 
@@ -4578,9 +4594,16 @@ bool8 PokemonItemUseNoEffect(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mo
         battlerId = MAX_BATTLERS_COUNT;
     }
 
-    // Skip using the item if it won't do anything
+    // Former trade-with-held-item evolution items are not in the item effect table
     if (!IS_POKEMON_ITEM(item))
+    {
+        if (ItemId_GetFieldFunc(item) == FieldUseFunc_EvoItem
+         && GetEvolutionTargetSpecies(mon, EVO_MODE_ITEM_USE, item) != SPECIES_NONE)
+            return FALSE;
         return TRUE;
+    }
+
+    // Skip using the item if it won't do anything
     if (gItemEffectTable[item - ITEM_POTION] == NULL && item != ITEM_ENIGMA_BERRY)
         return TRUE;
 
