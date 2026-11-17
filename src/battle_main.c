@@ -2552,6 +2552,14 @@ static void BattleIntroPrepareBackgroundSlide(void)
     }
 }
 
+static bool32 IsMonUsableInBattle(struct Pokemon *mon)
+{
+    return GetMonData(mon, MON_DATA_HP) != 0
+        && GetMonData(mon, MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE
+        && GetMonData(mon, MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG
+        && !GetMonData(mon, MON_DATA_IS_EGG);
+}
+
 static void BattleIntroDrawTrainersOrMonsSprites(void)
 {
     u8 *ptr;
@@ -2568,6 +2576,17 @@ static void BattleIntroDrawTrainersOrMonsSprites(void)
             ptr = (u8 *)&gBattleMons[gActiveBattler];
             for (i = 0; i < sizeof(struct BattlePokemon); i++)
                 ptr[i] = 0;
+        }
+        else if (GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER
+              && (gBattleTypeFlags & BATTLE_TYPE_DOUBLE)
+              && !(gBattleTypeFlags & BATTLE_TYPE_MULTI)
+              && !IsMonUsableInBattle(&gPlayerParty[gBattlerPartyIndexes[gActiveBattler]]))
+        {
+            // Double battle started with only one usable mon: leave this slot empty (2 vs 1).
+            ptr = (u8 *)&gBattleMons[gActiveBattler];
+            for (i = 0; i < sizeof(struct BattlePokemon); i++)
+                ptr[i] = 0;
+            gAbsentBattlerFlags |= gBitTable[gActiveBattler];
         }
         else
         {

@@ -877,11 +877,20 @@ static void Intro_DelayAndEnd(void)
     }
 }
 
+// TRUE if the player sends out a second mon at the start of a (non-multi) double battle.
+// FALSE when the battle started with only one usable mon (2 vs 1).
+static bool8 IsIntroPartnerPresent(u8 battler)
+{
+    return IsDoubleBattle()
+        && !(gBattleTypeFlags & BATTLE_TYPE_MULTI)
+        && !(gAbsentBattlerFlags & gBitTable[battler ^ BIT_FLANK]);
+}
+
 static void Intro_WaitForShinyAnimAndHealthbox(void)
 {
     bool8 var = FALSE;
 
-    if (!IsDoubleBattle() || (IsDoubleBattle() && (gBattleTypeFlags & BATTLE_TYPE_MULTI)))
+    if (!IsIntroPartnerPresent(gActiveBattler))
     {
         if (gSprites[gHealthboxSpriteIds[gActiveBattler]].callback == SpriteCallbackDummy)
             var = TRUE;
@@ -908,7 +917,7 @@ static void Intro_WaitForShinyAnimAndHealthbox(void)
             else
                 m4aMPlayVolumeControl(&gMPlayInfo_BGM, TRACKS_ALL, 256);
         HandleLowHpMusicChange(&gPlayerParty[gBattlerPartyIndexes[gActiveBattler]], gActiveBattler);
-        if (IsDoubleBattle())
+        if (IsDoubleBattle() && !(gAbsentBattlerFlags & gBitTable[gActiveBattler ^ BIT_FLANK]))
             HandleLowHpMusicChange(&gPlayerParty[gBattlerPartyIndexes[gActiveBattler ^ BIT_FLANK]], gActiveBattler ^ BIT_FLANK);
         gBattleSpritesDataPtr->healthBoxesData[gActiveBattler].introEndDelay = 3;
         gBattlerControllerFuncs[gActiveBattler] = Intro_DelayAndEnd;
@@ -921,9 +930,17 @@ static void Intro_TryShinyAnimShowHealthbox(void)
     {
         if (!gBattleSpritesDataPtr->healthBoxesData[gActiveBattler].triedShinyMonAnim)
             TryShinyAnimation(gActiveBattler, &gPlayerParty[gBattlerPartyIndexes[gActiveBattler]]);
-        if (!gBattleSpritesDataPtr->healthBoxesData[gActiveBattler ^ BIT_FLANK].triedShinyMonAnim)
+        if (IsDoubleBattle() && !(gBattleTypeFlags & BATTLE_TYPE_MULTI) && !IsIntroPartnerPresent(gActiveBattler))
+        {
+            // Empty partner slot (2 vs 1): nothing to animate.
+            gBattleSpritesDataPtr->healthBoxesData[gActiveBattler ^ BIT_FLANK].triedShinyMonAnim = TRUE;
+            gBattleSpritesDataPtr->healthBoxesData[gActiveBattler ^ BIT_FLANK].finishedShinyMonAnim = TRUE;
+        }
+        else if (!gBattleSpritesDataPtr->healthBoxesData[gActiveBattler ^ BIT_FLANK].triedShinyMonAnim)
+        {
             TryShinyAnimation(gActiveBattler ^ BIT_FLANK, &gPlayerParty[gBattlerPartyIndexes[gActiveBattler ^ BIT_FLANK]]);
-        if (IsDoubleBattle() && !(gBattleTypeFlags & BATTLE_TYPE_MULTI))
+        }
+        if (IsIntroPartnerPresent(gActiveBattler))
         {
             DestroySprite(&gSprites[gBattleControllerData[gActiveBattler ^ BIT_FLANK]]);
             UpdateHealthboxAttribute(gHealthboxSpriteIds[gActiveBattler ^ BIT_FLANK],
@@ -2761,11 +2778,14 @@ static void Task_StartSendOutAnim(u8 taskId)
         {
             gBattleBufferA[gActiveBattler][1] = gBattlerPartyIndexes[gActiveBattler];
             StartSendOutAnim(gActiveBattler, FALSE);
-            gActiveBattler ^= BIT_FLANK;
-            gBattleBufferA[gActiveBattler][1] = gBattlerPartyIndexes[gActiveBattler];
-            BattleLoadPlayerMonSpriteGfx(&gPlayerParty[gBattlerPartyIndexes[gActiveBattler]], gActiveBattler);
-            StartSendOutAnim(gActiveBattler, FALSE);
-            gActiveBattler ^= BIT_FLANK;
+            if (IsIntroPartnerPresent(gActiveBattler))
+            {
+                gActiveBattler ^= BIT_FLANK;
+                gBattleBufferA[gActiveBattler][1] = gBattlerPartyIndexes[gActiveBattler];
+                BattleLoadPlayerMonSpriteGfx(&gPlayerParty[gBattlerPartyIndexes[gActiveBattler]], gActiveBattler);
+                StartSendOutAnim(gActiveBattler, FALSE);
+                gActiveBattler ^= BIT_FLANK;
+            }
         }
         gBattlerControllerFuncs[gActiveBattler] = Intro_TryShinyAnimShowHealthbox;
         gActiveBattler = savedActiveBattler;

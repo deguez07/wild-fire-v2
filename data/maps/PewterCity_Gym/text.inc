@@ -32,6 +32,11 @@ PewterCity_Gym_Text_BrockDefeat::
     .string "Of course, a POKéMON must know the\n"
     .string "move FLASH to use it.$"
 
+@ Unused: double battles no longer require two POKéMON.
+PewterCity_Gym_Text_BrockNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "challenge me.$"
+
 PewterCity_Gym_Text_TakeThisWithYou::
     .string "Wait!\n"
     .string "Take this with you.$"
@@ -78,6 +83,11 @@ PewterCity_Gym_Text_LiamDefeat::
 PewterCity_Gym_Text_LiamPostBattle::
     .string "You're pretty hot.\n"
     .string "…But not as hot as BROCK!$"
+
+@ Unused: double battles no longer require two POKéMON.
+PewterCity_Gym_Text_LiamNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
 
 PewterCity_Gym_Text_LetMeTakeYouToTheTop::
     .string "Hiya!\n"

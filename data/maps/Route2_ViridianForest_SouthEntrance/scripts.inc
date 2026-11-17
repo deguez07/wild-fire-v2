@@ -1,5 +1,19 @@
 Route2_ViridianForest_SouthEntrance_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, Route2_ViridianForest_SouthEntrance_OnTransition
+	map_script MAP_SCRIPT_ON_FRAME_TABLE, Route2_ViridianForest_SouthEntrance_OnFrame
 	.byte 0
+
+Route2_ViridianForest_SouthEntrance_OnTransition::
+	call_if_unset FLAG_SYS_B_DASH, Route2_ViridianForest_SouthEntrance_EventScript_ArmAideTrigger
+	end
+
+Route2_ViridianForest_SouthEntrance_EventScript_ArmAideTrigger::
+	setvar VAR_TEMP_1, 1
+	return
+
+Route2_ViridianForest_SouthEntrance_OnFrame::
+	map_script_2 VAR_TEMP_1, 1, Route2_ViridianForest_SouthEntrance_EventScript_AideTrigger
+	.2byte 0
 
 Route2_ViridianForest_SouthEntrance_EventScript_Woman1::
 	msgbox Route2_ViridianForest_SouthEntrance_Text_ForestIsMaze, MSGBOX_NPC
@@ -8,3 +22,81 @@ Route2_ViridianForest_SouthEntrance_EventScript_Woman1::
 Route2_ViridianForest_SouthEntrance_EventScript_Woman2::
 	msgbox Route2_ViridianForest_SouthEntrance_Text_RattataHasWickedBite, MSGBOX_NPC
 	end
+
+@ Fires as soon as the player walks in from Route 2 without the Running Shoes
+Route2_ViridianForest_SouthEntrance_EventScript_AideTrigger::
+	lockall
+	setvar VAR_TEMP_1, 0
+	getplayerxy VAR_TEMP_2, VAR_TEMP_3
+	goto_if_ne VAR_TEMP_3, 10, Route2_ViridianForest_SouthEntrance_EventScript_AideTriggerEnd
+	setvar VAR_TEMP_4, 1
+	call Route2_ViridianForest_SouthEntrance_EventScript_AideGiveRunningShoes
+Route2_ViridianForest_SouthEntrance_EventScript_AideTriggerEnd::
+	releaseall
+	end
+
+@ Fallback if the player reaches the aide some other way and talks to him
+Route2_ViridianForest_SouthEntrance_EventScript_RunningShoesAide::
+	lock
+	faceplayer
+	setvar VAR_TEMP_4, 0
+	call Route2_ViridianForest_SouthEntrance_EventScript_AideGiveRunningShoes
+	release
+	end
+
+Route2_ViridianForest_SouthEntrance_EventScript_AideGiveRunningShoes::
+	textcolor NPC_TEXT_COLOR_MALE
+	waitse
+	playse SE_PIN
+	applymovement LOCALID_VIRIDIAN_FOREST_AIDE, Common_Movement_ExclamationMark
+	waitmovement 0
+	applymovement LOCALID_VIRIDIAN_FOREST_AIDE, Common_Movement_Delay48
+	waitmovement 0
+	msgbox Route2_ViridianForest_SouthEntrance_Text_OhPlayer
+	closemessage
+	call_if_eq VAR_TEMP_4, 1, Route2_ViridianForest_SouthEntrance_EventScript_AideApproachPlayer
+	msgbox Route2_ViridianForest_SouthEntrance_Text_AskedToDeliverThis
+	textcolor NPC_TEXT_COLOR_NEUTRAL
+	playfanfare MUS_OBTAIN_KEY_ITEM
+	message Route2_ViridianForest_SouthEntrance_Text_ReceivedRunningShoesFromAide
+	waitmessage
+	waitfanfare
+	msgbox Route2_ViridianForest_SouthEntrance_Text_SwitchedShoesWithRunningShoes
+	special DisableMsgBoxWalkaway
+	signmsg
+	msgbox Route2_ViridianForest_SouthEntrance_Text_ExplainRunningShoes
+	normalmsg
+	call EventScript_RestorePrevTextColor
+	msgbox Route2_ViridianForest_SouthEntrance_Text_MustBeGoingBackToLab
+	closemessage
+	call_if_eq VAR_TEMP_4, 1, Route2_ViridianForest_SouthEntrance_EventScript_AideExit
+	delay 30
+	textcolor NPC_TEXT_COLOR_NEUTRAL
+	msgbox Route2_ViridianForest_SouthEntrance_Text_RunningShoesLetterFromMom
+	closemessage
+	removeobject LOCALID_VIRIDIAN_FOREST_AIDE
+	setflag FLAG_SYS_B_DASH
+	return
+
+Route2_ViridianForest_SouthEntrance_EventScript_AideApproachPlayer::
+	applymovement LOCALID_VIRIDIAN_FOREST_AIDE, Route2_ViridianForest_SouthEntrance_Movement_AideApproachPlayer
+	waitmovement 0
+	applymovement LOCALID_PLAYER, Common_Movement_WalkInPlaceFasterUp
+	waitmovement 0
+	return
+
+Route2_ViridianForest_SouthEntrance_EventScript_AideExit::
+	applymovement LOCALID_VIRIDIAN_FOREST_AIDE, Route2_ViridianForest_SouthEntrance_Movement_AideExit
+	waitmovement 0
+	return
+
+Route2_ViridianForest_SouthEntrance_Movement_AideApproachPlayer::
+	delay_4
+	walk_down
+	walk_down
+	step_end
+
+Route2_ViridianForest_SouthEntrance_Movement_AideExit::
+	walk_left
+	walk_down
+	step_end

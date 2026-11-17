@@ -8,6 +8,7 @@
 #include "battle_interface.h"
 #include "battle_anim.h"
 #include "battle_controllers.h"
+#include "util.h"
 
 static void CB2_ReshowBattleScreenAfterMenu(void);
 static void ReshowBattleScreen_TurnOnDisplay(void);
@@ -258,7 +259,8 @@ static void CreateBattlerSprite(u8 battler)
             gSprites[gBattlerSpriteIds[battler]].callback = SpriteCallbackDummy;
             gSprites[gBattlerSpriteIds[battler]].data[0] = battler;
         }
-        else if (GetMonData(&gPlayerParty[gBattlerPartyIndexes[battler]], MON_DATA_HP) == 0)
+        else if (GetMonData(&gPlayerParty[gBattlerPartyIndexes[battler]], MON_DATA_HP) == 0
+              || (gAbsentBattlerFlags & gBitTable[battler]))
         {
             return;
         }
@@ -306,7 +308,9 @@ static void CreateHealthboxSprite(u8 battler)
             if (GetMonData(&gEnemyParty[gBattlerPartyIndexes[battler]], MON_DATA_HP) == 0)
                 SetHealthboxSpriteInvisible(healthboxSpriteId);
         }
-        else if (!(gBattleTypeFlags & BATTLE_TYPE_SAFARI) && GetMonData(&gPlayerParty[gBattlerPartyIndexes[battler]], MON_DATA_HP) == 0)
+        else if (!(gBattleTypeFlags & BATTLE_TYPE_SAFARI)
+              && (GetMonData(&gPlayerParty[gBattlerPartyIndexes[battler]], MON_DATA_HP) == 0
+               || (gAbsentBattlerFlags & gBitTable[battler])))
         {    
             SetHealthboxSpriteInvisible(healthboxSpriteId);
         }

@@ -14,6 +14,7 @@
 #include "field_specials.h"
 #include "new_menu_helpers.h"
 #include "battle_controllers.h"
+#include "util.h"
 #include "graphics.h"
 #include "battle_ai_switch_items.h"
 #include "constants/moves.h"
@@ -1595,6 +1596,8 @@ void BufferStringBattle(u16 stringId)
             {
                 if (gBattleTypeFlags & BATTLE_TYPE_MULTI)
                     stringPtr = sText_LinkPartnerSentOutPkmnGoPkmn;
+                else if (gAbsentBattlerFlags & gBitTable[GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT)])
+                    stringPtr = sText_GoPkmn; // Only one mon to send out (2 vs 1).
                 else
                     stringPtr = sText_GoTwoPkmn;
             }

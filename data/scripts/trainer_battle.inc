@@ -25,8 +25,7 @@ EventScript_TryDoDoubleTrainerBattle::
 	call EventScript_RevealTrainer
 	specialvar VAR_RESULT, Script_HasTrainerBeenFought
 	goto_if_ne VAR_RESULT, FALSE, EventScript_NoDoubleTrainerBattle
-	special HasEnoughMonsForDoubleBattle
-	goto_if_ne VAR_RESULT, PLAYER_HAS_TWO_USABLE_MONS, EventScript_NotEnoughMonsForDoubleBattle
+	@ Double battles may start with only one usable POKéMON (2 vs 1).
 	special PlayTrainerEncounterMusic
 	special SetUpTrainerMovement
 	goto EventScript_DoTrainerBattle
@@ -70,8 +69,7 @@ EventScript_NoRematchBattle::
 EventScript_TryDoDoubleRematchBattle::
 	specialvar VAR_RESULT, IsTrainerReadyForRematch
 	goto_if_eq VAR_RESULT, FALSE, EventScript_NoDoubleRematchBattle
-	special HasEnoughMonsForDoubleBattle
-	goto_if_ne VAR_RESULT, PLAYER_HAS_TWO_USABLE_MONS, EventScript_NotEnoughMonsForDoubleRematchBattle
+	@ Double battles may start with only one usable POKéMON (2 vs 1).
 	special PlayTrainerEncounterMusic
 	special SetUpTrainerMovement
 	special ShowTrainerIntroSpeech

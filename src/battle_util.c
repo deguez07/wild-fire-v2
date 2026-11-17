@@ -245,7 +245,11 @@ void ResetSentPokesToOpponentValue(void)
     gSentPokesToOpponent[1] = 0;
 
     for (i = 0; i < gBattlersCount; i += 2)
-        bits |= gBitTable[gBattlerPartyIndexes[i]];
+    {
+        // Skip an empty player slot in a 2 vs 1 double battle.
+        if (!(gAbsentBattlerFlags & gBitTable[i]))
+            bits |= gBitTable[gBattlerPartyIndexes[i]];
+    }
 
     for (i = 1; i < gBattlersCount; i += 2)
         gSentPokesToOpponent[(i & BIT_FLANK) >> 1] = bits;

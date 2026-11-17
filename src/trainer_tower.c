@@ -930,7 +930,8 @@ static void CloseResultsBoard(void)
 
 static void TrainerTowerGetDoublesEligiblity(void)
 {
-    gSpecialVar_Result = GetMonsStateToDoubles();
+    // Double battles may start with only one usable POKéMON (2 vs 1).
+    gSpecialVar_Result = PLAYER_HAS_TWO_USABLE_MONS;
 }
 
 

@@ -22,6 +22,7 @@ static void CreateTasksForSendRecvLinkBuffers(void);
 static void InitLinkBtlControllers(void);
 static void InitSinglePlayerBtlControllers(void);
 static void SetBattlePartyIds(void);
+static u8 GetUnusedPlayerPartyIndex(u8 partnerPartyIndex);
 static void Task_HandleSendLinkBuffersData(u8 taskId);
 static void Task_HandleCopyReceivedLinkBuffersData(u8 taskId);
 
@@ -350,8 +351,31 @@ static void SetBattlePartyIds(void)
                     }
                 }
             }
+
+            // The player started a double battle with only one usable mon.
+            // Point the empty slot at an unused party index; the battle intro marks it absent.
+            if (i >= 2 && j == PARTY_SIZE && GET_BATTLER_SIDE2(i) == B_SIDE_PLAYER)
+                gBattlerPartyIndexes[i] = GetUnusedPlayerPartyIndex(gBattlerPartyIndexes[i - 2]);
         }
     }
+}
+
+static u8 GetUnusedPlayerPartyIndex(u8 partnerPartyIndex)
+{
+    s32 i;
+
+    // Prefer an empty party slot, then a fainted mon, then anything else that isn't the partner.
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (i != partnerPartyIndex && GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+            return i;
+    }
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (i != partnerPartyIndex && !GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG))
+            return i;
+    }
+    return (partnerPartyIndex == 0) ? 1 : 0;
 }
 
 static void PrepareBufferDataTransfer(u8 bufferId, u8 *data, u16 size)
