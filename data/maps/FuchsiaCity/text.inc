@@ -89,6 +89,8 @@ Text_SubstituteTeach::
     .string "KANGASKHAN's belly pouch.\p"
     .string "But only POKéMON can use the\n"
     .string "technique SUBSTITUTE…\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!\p"
     .string "Want me to teach SUBSTITUTE to\n"
     .string "one of your POKéMON?$"
 

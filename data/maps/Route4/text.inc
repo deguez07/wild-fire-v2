@@ -28,6 +28,8 @@ Text_MegaPunchTeach::
     .string "When the chips are down,\n"
     .string "MEGA PUNCH is the ultimate attack!\l"
     .string "You agree, yes?\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!\p"
     .string "Now!\n"
     .string "Let me teach it to your POKéMON!$"
 
@@ -52,6 +54,8 @@ Text_MegaKickTeach::
     .string "When you get right down to it,\n"
     .string "MEGA KICK is the ultimate attack!\l"
     .string "Don't you agree?\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!\p"
     .string "Okay!\n"
     .string "I'll teach it to your POKéMON!$"
 

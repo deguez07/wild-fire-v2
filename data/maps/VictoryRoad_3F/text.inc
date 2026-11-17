@@ -4,6 +4,8 @@ Text_DoubleEdgeTeach::
     .string "VICTORY ROAD so courageously.\p"
     .string "In recognition of your feat,\n"
     .string "I'll teach you DOUBLE-EDGE.\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!\p"
     .string "Would you like me to teach that\n"
     .string "technique?$"
 

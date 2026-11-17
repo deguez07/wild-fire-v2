@@ -16,6 +16,8 @@ Text_AllowMeToTeachMonUltimateMove::
     .string "This is the POKéMON!\p"
     .string "This {STR_VAR_1} is worthy of\n"
     .string "learning my ultimate move!\p"
+    .string "I'll teach it to every worthy\n"
+    .string "POKéMON you bring me, anytime!\p"
     .string "Will you allow it?\p"
     .string "Will you allow your {STR_VAR_1} to\n"
     .string "learn my {STR_VAR_2}?$"

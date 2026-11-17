@@ -6,6 +6,9 @@ Text_BodySlamTeach::
     .string "to see who wimps out first.\p"
     .string "If you were to join us, you'd be\n"
     .string "squashed like a bug, though…\p"
+    .string "I'll teach BODY SLAM to as many\n"
+    .string "of your POKéMON as you like,\l"
+    .string "anytime!\p"
     .string "How about I teach BODY SLAM to\n"
     .string "a POKéMON of yours instead?$"
 

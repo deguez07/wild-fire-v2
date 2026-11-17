@@ -5,7 +5,10 @@ Text_RockSlideTeach::
     .string "Boulders tumbling down on you?\p"
     .string "That'd be, like, waaaaaaaaaaah!\n"
     .string "Total terror!\p"
-    .string "You don't seem to be scared.\n"
+    .string "You don't seem to be scared.\p"
+    .string "I'll teach ROCK SLIDE to as many\n"
+    .string "of your POKéMON as you like,\l"
+    .string "anytime!\p"
     .string "Want to try using ROCK SLIDE?$"
 
 Text_RockSlideDeclined::

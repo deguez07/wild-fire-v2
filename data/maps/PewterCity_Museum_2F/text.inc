@@ -6,7 +6,9 @@ Text_SeismicTossTeach::
     .string "But that should spur us to study\n"
     .string "harder, not toss in the towel.\p"
     .string "The only thing you should toss…\p"
-    .string "Well, how about SEISMIC TOSS?\n"
+    .string "Well, how about SEISMIC TOSS?\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!\p"
     .string "Should I teach that to a POKéMON?$"
 
 Text_SeismicTossDeclined::

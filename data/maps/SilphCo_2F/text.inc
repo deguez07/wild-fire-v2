@@ -49,6 +49,9 @@ Text_ThunderWaveTeach::
     .string "No! Stop! Help!\p"
     .string "Oh, you're not with TEAM ROCKET.\n"
     .string "I'm sorry, I thought…\p"
+    .string "To make it up to you, I'll teach\n"
+    .string "THUNDER WAVE to as many of your\l"
+    .string "POKéMON as you like, anytime!\p"
     .string "Will you forgive me if I teach\n"
     .string "you the THUNDER WAVE technique?$"
 

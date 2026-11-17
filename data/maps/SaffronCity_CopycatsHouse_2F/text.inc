@@ -24,7 +24,17 @@ Text_MimicTeach::
     .string "For me?\n"
     .string "Thank you!\p"
     .string "You know what?\n"
-    .string "I can teach the move MIMIC.$"
+    .string "I can teach the move MIMIC.\p"
+    .string "From now on, I'll teach it to as\n"
+    .string "many of your POKéMON as you like,\l"
+    .string "anytime!$"
+
+Text_MimicTeachAgain::
+    .string "Hi again!\n"
+    .string "I still love that POKé DOLL!\p"
+    .string "I'll teach MIMIC to as many of\n"
+    .string "your POKéMON as you like.\p"
+    .string "Want me to teach it again?$"
 
 Text_MimicDeclined::
     .string "Don't you like MIMIC?$"

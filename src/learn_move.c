@@ -135,16 +135,16 @@ struct LearnMoveGfxResources
     u8 unk_1C;
     u8 unk_1D;
     u8 unk_1E;
-    struct ListMenuItem listMenuItems[25];
-    u16 learnableMoves[25];
-    u8 listMenuStrbufs[25][13];
+    struct ListMenuItem listMenuItems[MAX_LEVEL_UP_MOVES + 1];
+    u16 learnableMoves[MAX_LEVEL_UP_MOVES + 1];
+    u8 listMenuStrbufs[MAX_LEVEL_UP_MOVES + 1][13];
     bool8 scheduleMoveInfoUpdate;
     u8 selectedPartyMember;
     u8 selectedMoveSlot;
     u8 unk_262;
     u8 listMenuTaskId;
-    u8 bg1TilemapBuffer[BG_SCREEN_SIZE]; // 264
-    u8 textColor[3]; // A64
+    u8 bg1TilemapBuffer[BG_SCREEN_SIZE] ALIGNED(4);
+    u8 textColor[3];
     u8 selectedIndex;
     u16 listMenuScrollPos;
     u16 listMenuScrollRow;
@@ -707,7 +707,7 @@ static void InitMoveRelearnerStateVariables(void)
     sMoveRelearner->unk_1D = 0;
     sMoveRelearner->unk_1E = 0;
     sMoveRelearner->scheduleMoveInfoUpdate = FALSE;
-    for (i = 0; i < 20; i++)
+    for (i = 0; i < MAX_LEVEL_UP_MOVES + 1; i++)
         sMoveRelearner->learnableMoves[i] = MOVE_NONE;
 }
 

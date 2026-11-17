@@ -90,7 +90,10 @@ Text_SoftboiledTeach::
     .string "It must be good luck that brought\n"
     .string "us together finally.\p"
     .string "I'd like to celebrate by teaching\n"
-    .string "you the move SOFTBOILED.$"
+    .string "you the move SOFTBOILED.\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!\l"
+    .string "Shall I?$"
 
 Text_SoftboiledDeclined::
     .string "I'll always be keeping an eye out\n"

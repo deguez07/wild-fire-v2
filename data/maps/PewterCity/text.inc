@@ -6,6 +6,8 @@ Text_DreamEaterTeach::
     .string "And…\n"
     .string "I learned how to eat dreams…\p"
     .string "Oogh, this is too spooky!\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!\p"
     .string "Let me teach it to a POKéMON so\n"
     .string "I can forget about it!$"
 

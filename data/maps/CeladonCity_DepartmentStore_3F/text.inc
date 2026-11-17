@@ -55,7 +55,9 @@ Text_CounterTeach::
     .string "The move I have in mind is\n"
     .string "COUNTER.\p"
     .string "Not like the one I'm leaning on,\n"
-    .string "mind you!$"
+    .string "mind you!\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!$"
 
 Text_CounterDeclined::
     .string "You're not interested? Come see\n"

@@ -3,6 +3,9 @@ Text_ExplosionTeach::
     .string "If this volcano were to erupt?\p"
     .string "The explosion would be the end of\n"
     .string "us. How terrifying is that?\p"
+    .string "I'll teach EXPLOSION to as many\n"
+    .string "of your POKéMON as you like,\l"
+    .string "anytime!\p"
     .string "While we're terrified, would you\n"
     .string "like me to teach EXPLOSION?$"
 

@@ -3,7 +3,9 @@ Text_MetronomeTeach::
     .string "I'll teach you a nifty move.\p"
     .string "Teach it to a POKéMON, and watch\n"
     .string "the fun unfold!\p"
-    .string "It's a move called METRONOME.\n"
+    .string "It's a move called METRONOME.\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!\p"
     .string "Does it strike your fancy?$"
 
 Text_MetronomeDeclined::

@@ -4,7 +4,9 @@ Text_SwordsDanceTeach::
     .string "I'll get stronger and stronger.\p"
     .string "Yep, stronger and stronger…\p"
     .string "How would you like to learn a move\n"
-    .string "like that? It's SWORDS DANCE.$"
+    .string "like that? It's SWORDS DANCE.\p"
+    .string "I'll teach it to as many of your\n"
+    .string "POKéMON as you like, anytime!$"
 
 Text_SwordsDanceDeclined::
     .string "Well, that's fine, too.$"
