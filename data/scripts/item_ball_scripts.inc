@@ -183,31 +183,31 @@ SafariZone_Center_EventScript_ItemNugget::
 	end
 
 SafariZone_East_EventScript_ItemMaxPotion::
-	finditem ITEM_MAX_POTION
+	finditem ITEM_NUGGET
 	end
 
 SafariZone_East_EventScript_ItemFullRestore::
-	finditem ITEM_FULL_RESTORE
+	finditem ITEM_BLACK_FLUTE
 	end
 
 SafariZone_East_EventScript_ItemTM11::
-	finditem ITEM_TM11
+	finditem ITEM_LUCKY_EGG
 	end
 
 SafariZone_East_EventScript_ItemLeafStone::
-	finditem ITEM_LEAF_STONE
+	finditem ITEM_SMOKE_BALL
 	end
 
 SafariZone_North_EventScript_ItemProtein::
-	finditem ITEM_PROTEIN
+	finditem ITEM_WHITE_FLUTE
 	end
 
 SafariZone_North_EventScript_ItemTM47::
-	finditem ITEM_TM47
+	finditem ITEM_BLUE_FLUTE
 	end
 
 SafariZone_West_EventScript_ItemTM32::
-	finditem ITEM_TM32
+	finditem ITEM_LUCKY_EGG
 	end
 
 SafariZone_West_EventScript_ItemGoldTeeth::
@@ -215,11 +215,11 @@ SafariZone_West_EventScript_ItemGoldTeeth::
 	end
 
 SafariZone_West_EventScript_ItemMaxPotion::
-	finditem ITEM_MAX_POTION
+	finditem ITEM_STAR_PIECE
 	end
 
 SafariZone_West_EventScript_ItemMaxRevive::
-	finditem ITEM_MAX_REVIVE
+	finditem ITEM_BIG_PEARL
 	end
 
 SilphCo_3F_EventScript_ItemHyperPotion::
@@ -471,7 +471,7 @@ PokemonMansion_2F_EventScript_ItemHPUp::
 	end
 
 ViridianCity_EventScript_ItemPotion::
-	finditem ITEM_POTION
+	finditem ITEM_LUCKY_EGG
 	end
 
 Route11_EventScript_ItemGreatBall::
