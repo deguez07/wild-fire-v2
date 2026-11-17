@@ -5,6 +5,10 @@ SafariZone_SecretHouse_EventScript_Attendant::
 	lock
 	faceplayer
 	goto_if_set FLAG_GOT_HM03, SafariZone_SecretHouse_EventScript_ExplainSurf
+	msgbox SafariZone_SecretHouse_Text_FirstToReachSecretHouse
+	call SafariZone_SecretHouse_EventScript_CountBadges
+	buffernumberstring STR_VAR_1, VAR_0x8004
+	goto_if_lt VAR_0x8004, 3, SafariZone_SecretHouse_EventScript_NotEnoughBadges
 	msgbox SafariZone_SecretHouse_Text_CongratsYouveWon
 	checkitemspace ITEM_HM03
 	goto_if_eq VAR_RESULT, FALSE, SafariZone_SecretHouse_EventScript_NoRoomForHM03
@@ -13,6 +17,27 @@ SafariZone_SecretHouse_EventScript_Attendant::
 	setflag FLAG_GOT_HM03
 	release
 	end
+
+SafariZone_SecretHouse_EventScript_NotEnoughBadges::
+	msgbox SafariZone_SecretHouse_Text_NeedThreeBadges
+	release
+	end
+
+SafariZone_SecretHouse_EventScript_CountBadges::
+	setvar VAR_0x8004, 0
+	call_if_set FLAG_BADGE01_GET, SafariZone_SecretHouse_EventScript_AddBadge
+	call_if_set FLAG_BADGE02_GET, SafariZone_SecretHouse_EventScript_AddBadge
+	call_if_set FLAG_BADGE03_GET, SafariZone_SecretHouse_EventScript_AddBadge
+	call_if_set FLAG_BADGE04_GET, SafariZone_SecretHouse_EventScript_AddBadge
+	call_if_set FLAG_BADGE05_GET, SafariZone_SecretHouse_EventScript_AddBadge
+	call_if_set FLAG_BADGE06_GET, SafariZone_SecretHouse_EventScript_AddBadge
+	call_if_set FLAG_BADGE07_GET, SafariZone_SecretHouse_EventScript_AddBadge
+	call_if_set FLAG_BADGE08_GET, SafariZone_SecretHouse_EventScript_AddBadge
+	return
+
+SafariZone_SecretHouse_EventScript_AddBadge::
+	addvar VAR_0x8004, 1
+	return
 
 SafariZone_SecretHouse_EventScript_NoRoomForHM03::
 	msgbox SafariZone_SecretHouse_Text_DontHaveRoomForPrize

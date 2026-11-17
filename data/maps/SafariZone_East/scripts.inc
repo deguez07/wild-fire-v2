@@ -6,7 +6,7 @@ SafariZone_East_EventScript_RestHouseSign::
 	end
 
 SafariZone_East_EventScript_TrainerTips::
-	msgbox SafariZone_East_Text_TimeDeclinesOnlyWhileYouWalk, MSGBOX_SIGN
+	msgbox SafariZone_East_Text_StockUpBeforeExploring, MSGBOX_SIGN
 	end
 
 SafariZone_East_EventScript_AreaSign::

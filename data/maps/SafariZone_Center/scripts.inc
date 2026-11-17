@@ -11,9 +11,17 @@ SafariZone_Center_EventScript_RestHouseSign::
 	end
 
 SafariZone_Center_EventScript_TrainerTips::
-	msgbox SafariZone_Center_Text_PressStartToCheckTime, MSGBOX_SIGN
+	msgbox SafariZone_Center_Text_WarpPanelTips, MSGBOX_SIGN
 	end
 
 SafariZone_Center_EventScript_AreaSign::
 	msgbox SafariZone_Center_Text_CenterArea, MSGBOX_SIGN
+	end
+
+SafariZone_Center_EventScript_RockSlideWorker::
+	msgbox SafariZone_Center_Text_RockSlideEntranceClosed, MSGBOX_NPC
+	end
+
+SafariZone_Center_EventScript_RockSlideBoulder::
+	msgbox SafariZone_Center_Text_RocksBlockTheWay, MSGBOX_SIGN
 	end

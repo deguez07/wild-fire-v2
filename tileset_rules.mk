@@ -37,7 +37,7 @@ $(TILESETGFXDIR)/secondary/seafoam_islands/tiles.4bpp: %.4bpp: %.png
 	$(GFX) $< $@ -num_tiles 318 -Wnum_tiles
 
 $(TILESETGFXDIR)/secondary/generic_building_2/tiles.4bpp: %.4bpp: %.png
-	$(GFX) $< $@ -num_tiles 152 -Wnum_tiles
+	$(GFX) $< $@ -num_tiles 156 -Wnum_tiles
 
 $(TILESETGFXDIR)/secondary/underground_path/tiles.4bpp: %.4bpp: %.png
 	$(GFX) $< $@ -num_tiles 50 -Wnum_tiles
@@ -160,7 +160,7 @@ $(TILESETGFXDIR)/secondary/cerulean_city/tiles.4bpp: %.4bpp: %.png
 	$(GFX) $< $@ -num_tiles 158 -Wnum_tiles
 
 $(TILESETGFXDIR)/secondary/fuchsia_city/tiles.4bpp: %.4bpp: %.png
-	$(GFX) $< $@ -num_tiles 191 -Wnum_tiles
+	$(GFX) $< $@ -num_tiles 195 -Wnum_tiles
 
 $(TILESETGFXDIR)/secondary/mart/tiles.4bpp: %.4bpp: %.png
 	$(GFX) $< $@ -num_tiles 36 -Wnum_tiles

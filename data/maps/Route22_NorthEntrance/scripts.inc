@@ -16,3 +16,13 @@ Route22_NorthEntrance_EventScript_BoulderBadgeGuardTrigger::
 	bufferstdstring STR_VAR_1, STDSTRING_BOULDER_BADGE
 	goto Route23_EventScript_BadgeGuardTrigger
 	end
+
+Route22_NorthEntrance_EventScript_SafariZoneAttendant::
+	lock
+	faceplayer
+	msgbox Route22_NorthEntrance_Text_NewSafariZoneEntrance
+	goto_if_set FLAG_SYS_GAME_CLEAR, Route22_NorthEntrance_EventScript_SafariZoneAttendantEnd
+	msgbox Route22_NorthEntrance_Text_FuchsiaEntranceClosed
+Route22_NorthEntrance_EventScript_SafariZoneAttendantEnd::
+	release
+	end

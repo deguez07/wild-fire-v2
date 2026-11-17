@@ -2,11 +2,11 @@ SafariZone_West_RestHouse_MapScripts::
 	.byte 0
 
 SafariZone_West_RestHouse_EventScript_Man::
-	msgbox SafariZone_West_Text_BaitMakesMonStickAround, MSGBOX_NPC
+	msgbox SafariZone_West_Text_StatusMakesMonsEasierToCatch, MSGBOX_NPC
 	end
 
 SafariZone_West_RestHouse_EventScript_Scientist::
-	msgbox SafariZone_West_Text_RocksMakeMonRunButEasierCatch, MSGBOX_NPC
+	msgbox SafariZone_West_Text_WeakenMonsBeforeCatching, MSGBOX_NPC
 	end
 
 SafariZone_West_RestHouse_EventScript_CooltrainerF::
