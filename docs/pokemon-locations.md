@@ -183,3 +183,63 @@ Encounter rate: 50. The data is identical for FireRed and LeafGreen.
 | 9    | Nosepass  | 11    | 4%          |
 | 10   | Geodude   | 11    | 1%          |
 | 11   | Nosepass  | 11    | 1%          |
+
+## Safari Zone North (`MAP_SAFARI_ZONE_NORTH`)
+
+### Grass (land encounters)
+
+Encounter rate: 21. The data is identical for FireRed and LeafGreen.
+
+| Pokémon  | Level | Total chance |
+|----------|-------|--------------|
+| Abra     | 8     | 25%          |
+| Ralts    | 8     | 25%          |
+| Houndour | 8     | 25%          |
+| Eevee    | 8     | 25%          |
+
+#### Slot breakdown
+
+| Slot | Pokémon  | Level | Slot chance |
+|------|----------|-------|-------------|
+| 0    | Abra     | 8     | 20%         |
+| 1    | Ralts    | 8     | 20%         |
+| 2    | Houndour | 8     | 10%         |
+| 3    | Houndour | 8     | 10%         |
+| 4    | Eevee    | 8     | 10%         |
+| 5    | Eevee    | 8     | 10%         |
+| 6    | Abra     | 8     | 5%          |
+| 7    | Ralts    | 8     | 5%          |
+| 8    | Houndour | 8     | 4%          |
+| 9    | Eevee    | 8     | 4%          |
+| 10   | Houndour | 8     | 1%          |
+| 11   | Eevee    | 8     | 1%          |
+
+### Fishing
+
+Encounter rate: 100. The data is identical for FireRed and LeafGreen. Surfing (water) encounters are unchanged.
+
+| Rod       | Pokémon   | Level | Chance |
+|-----------|-----------|-------|--------|
+| Old Rod   | Dratini   | 8     | 100%   |
+| Good Rod  | Totodile  | 8     | 100%   |
+| Super Rod | Mudkip    | 8     | 100%   |
+
+#### Slot breakdown
+
+| Slots | Rod       | Pokémon  | Level |
+|-------|-----------|----------|-------|
+| 0-1   | Old Rod   | Dratini  | 8     |
+| 2-4   | Good Rod  | Totodile | 8     |
+| 5-9   | Super Rod | Mudkip   | 8     |
+
+### Capture rate changes
+
+These are global changes to `src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone.
+
+| Pokémon  | Old capture rate | New capture rate |
+|----------|------------------|------------------|
+| Houndour | 120              | 200              |
+| Eevee    | 45               | 200              |
+| Dratini  | 45               | 200              |
+| Totodile | 45               | 200              |
+| Mudkip   | 45               | 200              |
