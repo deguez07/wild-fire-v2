@@ -243,3 +243,65 @@ These are global changes to `src/data/pokemon/species_info.h`, so they apply eve
 | Dratini  | 45               | 200              |
 | Totodile | 45               | 200              |
 | Mudkip   | 45               | 200              |
+
+## Safari Zone Center (`MAP_SAFARI_ZONE_CENTER`)
+
+### Grass (land encounters)
+
+Encounter rate: 21. The data is identical for FireRed and LeafGreen.
+
+| Pokémon  | Level | Total chance |
+|----------|-------|--------------|
+| Larvitar | 8     | 25%          |
+| Bagon    | 8     | 25%          |
+| Beldum   | 8     | 25%          |
+| Gastly   | 8     | 25%          |
+
+#### Slot breakdown
+
+| Slot | Pokémon  | Level | Slot chance |
+|------|----------|-------|-------------|
+| 0    | Larvitar | 8     | 20%         |
+| 1    | Bagon    | 8     | 20%         |
+| 2    | Beldum   | 8     | 10%         |
+| 3    | Beldum   | 8     | 10%         |
+| 4    | Gastly   | 8     | 10%         |
+| 5    | Gastly   | 8     | 10%         |
+| 6    | Larvitar | 8     | 5%          |
+| 7    | Bagon    | 8     | 5%          |
+| 8    | Beldum   | 8     | 4%          |
+| 9    | Gastly   | 8     | 4%          |
+| 10   | Beldum   | 8     | 1%          |
+| 11   | Gastly   | 8     | 1%          |
+
+### Fishing
+
+Encounter rate: 100. The data is identical for FireRed and LeafGreen. Surfing (water) encounters are unchanged.
+
+| Rod       | Pokémon  | Level | Chance |
+|-----------|----------|-------|--------|
+| Old Rod   | Staryu   | 8     | 100%   |
+| Good Rod  | Slowpoke | 8     | 100%   |
+| Super Rod | Omanyte  | 8     | 100%   |
+
+#### Slot breakdown
+
+| Slots | Rod       | Pokémon  | Level |
+|-------|-----------|----------|-------|
+| 0-1   | Old Rod   | Staryu   | 8     |
+| 2-4   | Good Rod  | Slowpoke | 8     |
+| 5-9   | Super Rod | Omanyte  | 8     |
+
+### Capture rate changes
+
+These are global changes to `src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone.
+
+| Pokémon  | Old capture rate | New capture rate |
+|----------|------------------|------------------|
+| Larvitar | 45               | 200              |
+| Bagon    | 45               | 200              |
+| Beldum   | 3                | 200              |
+| Gastly   | 190              | 200              |
+| Staryu   | 225              | 200              |
+| Slowpoke | 190              | 200              |
+| Omanyte  | 45               | 200              |
