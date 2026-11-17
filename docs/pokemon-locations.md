@@ -40,7 +40,7 @@ None.
 
 ### Grass (land encounters)
 
-Encounter rate: 21. The data is identical for FireRed and LeafGreen.
+Encounter rate: 50. The data is identical for FireRed and LeafGreen.
 
 | Pokémon   | Level | Total chance |
 |-----------|-------|--------------|
@@ -70,7 +70,7 @@ Encounter rate: 21. The data is identical for FireRed and LeafGreen.
 
 ### Grass (land encounters)
 
-Encounter rate: 14. The data is identical for FireRed and LeafGreen.
+Encounter rate: 50. The data is identical for FireRed and LeafGreen.
 
 | Pokémon  | Level | Total chance |
 |----------|-------|--------------|
@@ -95,3 +95,91 @@ Encounter rate: 14. The data is identical for FireRed and LeafGreen.
 | 9    | Spinarak | 9     | 4%          |
 | 10   | Ledyba   | 9     | 1%          |
 | 11   | Spinarak | 9     | 1%          |
+
+## Pallet Town (`MAP_PALLET_TOWN`)
+
+### Fishing
+
+Encounter rate: 100. The data is identical for FireRed and LeafGreen. Surfing (water) encounters are unchanged.
+
+| Rod       | Pokémon  | Level | Chance |
+|-----------|----------|-------|--------|
+| Old Rod   | Magikarp | 8     | 100%   |
+| Good Rod  | Feebas   | 9     | 100%   |
+| Super Rod | Poliwag  | 10    | 100%   |
+
+#### Slot breakdown
+
+| Slots | Rod       | Pokémon  | Level |
+|-------|-----------|----------|-------|
+| 0-1   | Old Rod   | Magikarp | 8     |
+| 2-4   | Good Rod  | Feebas   | 9     |
+| 5-9   | Super Rod | Poliwag  | 10    |
+
+## Viridian City (`MAP_VIRIDIAN_CITY`)
+
+### Fishing
+
+Encounter rate: 100. The data is identical for FireRed and LeafGreen. Surfing (water) encounters are unchanged.
+
+| Rod       | Pokémon | Level | Chance |
+|-----------|---------|-------|--------|
+| Old Rod   | Wooper  | 8     | 100%   |
+| Good Rod  | Lotad   | 9     | 100%   |
+| Super Rod | Spheal  | 10    | 100%   |
+
+#### Slot breakdown
+
+| Slots | Rod       | Pokémon | Level |
+|-------|-----------|---------|-------|
+| 0-1   | Old Rod   | Wooper  | 8     |
+| 2-4   | Good Rod  | Lotad   | 9     |
+| 5-9   | Super Rod | Spheal  | 10    |
+
+## Route 22 (`MAP_ROUTE22`)
+
+### Fishing
+
+Encounter rate: 100. The data is identical for FireRed and LeafGreen. Other encounters are unchanged.
+
+| Rod       | Pokémon  | Level | Chance |
+|-----------|----------|-------|--------|
+| Old Rod   | Clamperl | 11    | 100%   |
+| Good Rod  | Krabby   | 12    | 100%   |
+| Super Rod | Horsea   | 13    | 100%   |
+
+#### Slot breakdown
+
+| Slots | Rod       | Pokémon  | Level |
+|-------|-----------|----------|-------|
+| 0-1   | Old Rod   | Clamperl | 11    |
+| 2-4   | Good Rod  | Krabby   | 12    |
+| 5-9   | Super Rod | Horsea   | 13    |
+
+### Grass (land encounters)
+
+Encounter rate: 50. The data is identical for FireRed and LeafGreen.
+
+| Pokémon   | Level | Total chance |
+|-----------|-------|--------------|
+| Sandshrew | 11    | 25%          |
+| Diglett   | 11    | 25%          |
+| Geodude   | 11    | 25%          |
+| Nosepass  | 11    | 25%          |
+
+#### Slot breakdown
+
+| Slot | Pokémon   | Level | Slot chance |
+|------|-----------|-------|-------------|
+| 0    | Sandshrew | 11    | 20%         |
+| 1    | Diglett   | 11    | 20%         |
+| 2    | Geodude   | 11    | 10%         |
+| 3    | Geodude   | 11    | 10%         |
+| 4    | Nosepass  | 11    | 10%         |
+| 5    | Nosepass  | 11    | 10%         |
+| 6    | Sandshrew | 11    | 5%          |
+| 7    | Diglett   | 11    | 5%          |
+| 8    | Geodude   | 11    | 4%          |
+| 9    | Nosepass  | 11    | 4%          |
+| 10   | Geodude   | 11    | 1%          |
+| 11   | Nosepass  | 11    | 1%          |
