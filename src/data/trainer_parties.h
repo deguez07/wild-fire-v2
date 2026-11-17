@@ -888,15 +888,39 @@ static const struct TrainerMonNoItemDefaultMoves sParty_SailorDwayne[] = {
 static const struct TrainerMonNoItemCustomMoves sParty_CamperLiam[] = {
     {
         .iv = 0,
-        .lvl = 10,
-        .species = SPECIES_GEODUDE,
-        .moves = {MOVE_TACKLE, MOVE_DEFENSE_CURL, MOVE_NONE, MOVE_NONE},
+        .lvl = 13,
+        .species = SPECIES_ARON,
+        .moves = {MOVE_TACKLE, MOVE_HARDEN, MOVE_METAL_CLAW, MOVE_NONE},
     },
     {
         .iv = 0,
-        .lvl = 11,
-        .species = SPECIES_SANDSHREW,
-        .moves = {MOVE_SCRATCH, MOVE_DEFENSE_CURL, MOVE_SAND_ATTACK, MOVE_NONE},
+        .lvl = 13,
+        .species = SPECIES_OMANYTE,
+        .moves = {MOVE_WATER_GUN, MOVE_WITHDRAW, MOVE_ANCIENT_POWER, MOVE_NONE},
+    },
+    {
+        .iv = 0,
+        .lvl = 14,
+        .species = SPECIES_KABUTO,
+        .moves = {MOVE_SCRATCH, MOVE_HARDEN, MOVE_ANCIENT_POWER, MOVE_NONE},
+    },
+    {
+        .iv = 0,
+        .lvl = 14,
+        .species = SPECIES_CORSOLA,
+        .moves = {MOVE_TACKLE, MOVE_HARDEN, MOVE_ANCIENT_POWER, MOVE_BUBBLE_BEAM},
+    },
+    {
+        .iv = 0,
+        .lvl = 14,
+        .species = SPECIES_LARVITAR,
+        .moves = {MOVE_BITE, MOVE_SCARY_FACE, MOVE_ROCK_TOMB, MOVE_NONE},
+    },
+    {
+        .iv = 0,
+        .lvl = 15,
+        .species = SPECIES_SHUCKLE,
+        .moves = {MOVE_WRAP, MOVE_WITHDRAW, MOVE_ROCK_TOMB, MOVE_BIDE},
     },
 };
 
@@ -5622,15 +5646,39 @@ static const struct TrainerMonItemCustomMoves sParty_EliteFourLance[] = {
 static const struct TrainerMonNoItemCustomMoves sParty_LeaderBrock[] = {
     {
         .iv = 0,
-        .lvl = 12,
-        .species = SPECIES_GEODUDE,
-        .moves = {MOVE_TACKLE, MOVE_DEFENSE_CURL, MOVE_NONE, MOVE_NONE},
+        .lvl = 16,
+        .species = SPECIES_ONIX,
+        .moves = {MOVE_ROCK_TOMB, MOVE_BIND, MOVE_SCREECH, MOVE_ROCK_THROW},
     },
     {
         .iv = 0,
-        .lvl = 14,
-        .species = SPECIES_ONIX,
-        .moves = {MOVE_TACKLE, MOVE_BIND, MOVE_ROCK_TOMB, MOVE_NONE},
+        .lvl = 16,
+        .species = SPECIES_SOLROCK,
+        .moves = {MOVE_ROCK_THROW, MOVE_CONFUSION, MOVE_HARDEN, MOVE_FIRE_SPIN},
+    },
+    {
+        .iv = 0,
+        .lvl = 16,
+        .species = SPECIES_NOSEPASS,
+        .moves = {MOVE_ROCK_TOMB, MOVE_THUNDER_WAVE, MOVE_HARDEN, MOVE_ROCK_THROW},
+    },
+    {
+        .iv = 0,
+        .lvl = 16,
+        .species = SPECIES_RHYHORN,
+        .moves = {MOVE_STOMP, MOVE_ROCK_TOMB, MOVE_HORN_ATTACK, MOVE_SCARY_FACE},
+    },
+    {
+        .iv = 0,
+        .lvl = 16,
+        .species = SPECIES_LUNATONE,
+        .moves = {MOVE_ROCK_THROW, MOVE_CONFUSION, MOVE_HYPNOSIS, MOVE_HARDEN},
+    },
+    {
+        .iv = 0,
+        .lvl = 16,
+        .species = SPECIES_SUDOWOODO,
+        .moves = {MOVE_ROCK_TOMB, MOVE_MIMIC, MOVE_FLAIL, MOVE_SLAM},
     },
 };
 
