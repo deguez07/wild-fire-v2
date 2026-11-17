@@ -64,9 +64,29 @@ ViridianCity_Mart_EventScript_Clerk::
 	.align 2
 ViridianCity_Mart_Items::
 	.2byte ITEM_POKE_BALL
+	.2byte ITEM_GREAT_BALL
 	.2byte ITEM_POTION
+	.2byte ITEM_SUPER_POTION
 	.2byte ITEM_ANTIDOTE
 	.2byte ITEM_PARALYZE_HEAL
+	.2byte ITEM_BURN_HEAL
+	.2byte ITEM_TM04
+	.2byte ITEM_TM05
+	.2byte ITEM_TM06
+	.2byte ITEM_TM07
+	.2byte ITEM_TM08
+	.2byte ITEM_TM09
+	.2byte ITEM_TM10
+	.2byte ITEM_TM12
+	.2byte ITEM_TM17
+	.2byte ITEM_TM20
+	.2byte ITEM_TM21
+	.2byte ITEM_TM27
+	.2byte ITEM_TM32
+	.2byte ITEM_TM41
+	.2byte ITEM_TM45
+	.2byte ITEM_TM46
+	.2byte ITEM_TM49
 	.2byte ITEM_NONE
 	release
 	end

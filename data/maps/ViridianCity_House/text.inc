@@ -1,16 +1,157 @@
-ViridianCity_House_Text_NicknamingIsFun::
-    .string "Coming up with nicknames is fun,\n"
-    .string "but it's not so easy to do.\p"
-    .string "Clever names are nice, but simple\n"
-    .string "names are easier to remember.$"
+@ ---------------- Old Rod fisherman ----------------
 
-ViridianCity_House_Text_MyDaddyLovesMonsToo::
-    .string "My daddy loves POKéMON, too.$"
+ViridianCity_House_Text_ImFishingGuruDoYouLikeToFish::
+    .string "I'm the FISHING GURU!\p"
+    .string "I simply looove fishing!\n"
+    .string "I can't bear to go without.\p"
+    .string "Tell me, do you like to fish?$"
 
-ViridianCity_House_Text_Speary::
-    .string "SPEARY: Tetweet!$"
+ViridianCity_House_Text_TakeThisAndFish::
+    .string "Grand! I like your style.\n"
+    .string "I think we can be friends.\p"
+    .string "Take this and fish, young friend!$"
 
-ViridianCity_House_Text_SpearowNameSpeary::
-    .string "SPEAROW\n"
-    .string "Name: SPEARY$"
+ViridianCity_House_Text_ReceivedOldRodFromFishingGuru::
+    .string "{PLAYER} received an OLD ROD from\n"
+    .string "the FISHING GURU.$"
 
+ViridianCity_House_Text_FishingIsAWayOfLife::
+    .string "Fishing is a way of life!\n"
+    .string "It is like the finest poetry.\p"
+    .string "From the seas to rivers, go out\n"
+    .string "and land the big one, my friend.$"
+
+ViridianCity_House_Text_OhThatsSoDisappointing::
+    .string "Oh…\n"
+    .string "That's so disappointing…$"
+
+ViridianCity_House_Text_HowAreTheFishBiting::
+    .string "Hello there, {PLAYER}!\p"
+    .string "How are the fish biting?$"
+
+ViridianCity_House_Text_NoRoomForNiceGift::
+    .string "Oh, no!\p"
+    .string "I had a nice gift for you, but you\n"
+    .string "have no room for it!$"
+
+@ ---------------- Good Rod fisherman ----------------
+
+ViridianCity_House_Text_DoYouLikeToFishOlderBrother::
+    .string "I'm the FISHING GURU's older\n"
+    .string "brother.\p"
+    .string "I simply looove fishing!\n"
+    .string "I can't bear to go without.\p"
+    .string "Tell me, do you like to fish?$"
+
+ViridianCity_House_Text_LikeYourStyleTakeThis::
+    .string "Grand! I like your style.\n"
+    .string "I think we can be friends.\p"
+    .string "Take this and fish, young friend!$"
+
+ViridianCity_House_Text_ReceivedGoodRod::
+    .string "{PLAYER} received a GOOD ROD from\n"
+    .string "the FISHING GURU's brother.$"
+
+ViridianCity_House_Text_GoodRodCanCatchBetterMons::
+    .string "Fishing is a way of life!\n"
+    .string "It is like the finest poetry.\p"
+    .string "A crummy OLD ROD could only catch\n"
+    .string "MAGIKARP, yes?\p"
+    .string "But with a GOOD ROD, you can\n"
+    .string "catch much better POKéMON.$"
+
+ViridianCity_House_Text_OhThatsDisappointing::
+    .string "Oh…\n"
+    .string "That's so disappointing…$"
+
+ViridianCity_House_Text_YouHaveNoRoomForGift::
+    .string "Oh, no!\p"
+    .string "I had a gift for you, but you have\n"
+    .string "no room for it!$"
+
+@ ---------------- Super Rod fisherman ----------------
+
+ViridianCity_House_Text_DoYouLikeToFishYoungerBrother::
+    .string "I'm the FISHING GURU's younger\n"
+    .string "brother.\p"
+    .string "I simply looove fishing!\n"
+    .string "I can't bear to go without.\p"
+    .string "Tell me, do you like to fish?$"
+
+ViridianCity_House_Text_TakeThisAndFishYoungFriend::
+    .string "Grand! I like your style.\n"
+    .string "I think we can be friends.\p"
+    .string "Take this and fish, young friend!$"
+
+ViridianCity_House_Text_ReceivedSuperRod::
+    .string "{PLAYER} received a SUPER ROD from\n"
+    .string "the FISHING GURU's brother.$"
+
+ViridianCity_House_Text_IfYouCatchBigMagikarpShowMe::
+    .string "Fishing is a way of life!\n"
+    .string "It is like the finest poetry.\p"
+    .string "From the seas to rivers, go out\n"
+    .string "and land the big one, my friend.\p"
+    .string "Now, I have a request.\p"
+    .string "If you catch a big MAGIKARP \n"
+    .string "with that ROD, I want to see it.\p"
+    .string "As much as I love to fish, I also\n"
+    .string "love seeing gigantic MAGIKARP.$"
+
+ViridianCity_House_Text_TryFishingBringMeMagikarp::
+    .string "Hello there, {PLAYER}!\n"
+    .string "Have you been fishing?\p"
+    .string "Try fishing with the SUPER ROD in\n"
+    .string "any body of water.\p"
+    .string "You'll find different POKéMON in\n"
+    .string "different places.\p"
+    .string "Oh, and don't forget to bring me\n"
+    .string "gigantic MAGIKARP.$"
+
+ViridianCity_House_Text_OhMagikarpAllowMeToSee::
+    .string "Oh? {PLAYER}?\n"
+    .string "Why, if it isn't a MAGIKARP!\p"
+    .string "Allow me to see it, quick!$"
+
+ViridianCity_House_Text_WhoaXInchesTakeThis::
+    .string "… … …Whoa!\n"
+    .string "{STR_VAR_2} inches!\p"
+    .string "You have a rare appreciation for\n"
+    .string "the fine, poetic aspects of fishing!\p"
+    .string "You must take this.\n"
+    .string "I insist!$"
+
+ViridianCity_House_Text_LookForwardToGreaterRecords::
+    .string "I'll look forward to seeing greater\n"
+    .string "records from you!$"
+
+ViridianCity_House_Text_HuhXInchesSameSizeAsLast::
+    .string "Huh?\n"
+    .string "{STR_VAR_2} inches?\p"
+    .string "This is the same size as the one\n"
+    .string "I saw before.$"
+
+ViridianCity_House_Text_HmmXInchesDoesntMeasureUp::
+    .string "Hmm…\n"
+    .string "This one is {STR_VAR_2} inches long.\p"
+    .string "It doesn't measure up to the\n"
+    .string "{STR_VAR_3}-inch one you brought before.$"
+
+ViridianCity_House_Text_DoesntLookLikeMagikarp::
+    .string "Uh… That doesn't look much like\n"
+    .string "a MAGIKARP.$"
+
+ViridianCity_House_Text_NoRoomForGift::
+    .string "Oh, no!\p"
+    .string "I had a gift for you, but you have\n"
+    .string "no room for it.$"
+
+ViridianCity_House_Text_MostGiganticMagikarpXInches::
+    .string "The most gigantic MAGIKARP\n"
+    .string "I have ever witnessed…\p"
+    .string "{STR_VAR_3} inches!$"
+
+ViridianCity_House_Text_BlankChartOfSomeSort::
+    .string "It's a blank chart of some sort.\p"
+    .string "It has spaces for writing in\n"
+    .string "records of some kind.$"

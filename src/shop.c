@@ -227,12 +227,18 @@ static u8 GetMartTypeFromItemList(u32 martType)
     if (martType != MART_TYPE_REGULAR)
         return martType;
 
+    // The TM layout assumes every item is a TM (it prints a TM number and move name
+    // for the highlighted item), so only use it when the whole list is TMs.
+    // Marts selling a mix of TMs and regular items use the regular layout.
+    if (sShopData.itemCount == 0)
+        return MART_TYPE_REGULAR;
+
     for (i = 0; i < sShopData.itemCount && sShopData.itemList[i] != 0; i++)
     {
-        if (ItemId_GetPocket(sShopData.itemList[i]) == POCKET_TM_CASE)
-            return MART_TYPE_TMHM;
+        if (ItemId_GetPocket(sShopData.itemList[i]) != POCKET_TM_CASE)
+            return MART_TYPE_REGULAR;
     }
-    return MART_TYPE_REGULAR;
+    return MART_TYPE_TMHM;
 }
 
 static void SetShopItemsForSale(const u16 *items)
@@ -559,7 +565,11 @@ bool8 BuyMenuBuildListMenuTemplate(void)
 
 static void PokeMartWriteNameAndIdAt(struct ListMenuItem *list, u16 index, u8 *dst)
 {
-    CopyItemName(index, dst);
+    // In the regular layout a TM would just read "TM04", so show the move it teaches
+    if (ItemId_GetPocket(index) == POCKET_TM_CASE && sShopData.martType != MART_TYPE_TMHM)
+        StringCopy(dst, gMoveNames[ItemIdToBattleMoveId(index)]);
+    else
+        CopyItemName(index, dst);
     list->label = dst;
     list->index = index;
 }

@@ -92,3 +92,20 @@ ViridianCity_School_EventScript_ReadParalysis::
 ViridianCity_School_EventScript_ExitBlackboard::
 	releaseall
 	end
+
+ViridianCity_School_EventScript_VSSeekerWoman::
+	lock
+	faceplayer
+	goto_if_set FLAG_GOT_VS_SEEKER, ViridianCity_School_EventScript_ExplainVSSeeker
+	msgbox ViridianCity_School_Text_UrgeToBattleSomeoneAgain
+	setflag FLAG_GOT_VS_SEEKER
+	giveitem ITEM_VS_SEEKER
+	goto_if_eq VAR_RESULT, FALSE, EventScript_BagIsFull
+	msgbox ViridianCity_School_Text_UseDeviceForRematches
+	release
+	end
+
+ViridianCity_School_EventScript_ExplainVSSeeker::
+	msgbox ViridianCity_School_Text_ExplainVSSeeker
+	release
+	end
