@@ -29,6 +29,7 @@ PewterCity_Mart_Items::
 	.2byte ITEM_ANTIDOTE
 	.2byte ITEM_PARALYZE_HEAL
 	.2byte ITEM_BURN_HEAL
+	.2byte ITEM_REPEL
 	.2byte ITEM_TM01
 	.2byte ITEM_TM03
 	.2byte ITEM_TM11
