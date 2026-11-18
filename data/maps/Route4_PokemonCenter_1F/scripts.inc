@@ -1,4 +1,5 @@
 .equ MAGIKARP_PRICE, 500
+.equ REQUIRED_CAUGHT_MONS, 35
 
 Route4_PokemonCenter_1F_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, Route4_PokemonCenter_1F_OnTransition
@@ -147,3 +148,34 @@ Route4_PokemonCenter_1F_EventScript_Newspaper::
 	msgbox Route4_PokemonCenter_1F_Text_ItsANewspaper
 	release
 	end
+
+Route4_PokemonCenter_1F_EventScript_Aide::
+	lock
+	faceplayer
+	call Route4_PokemonCenter_1F_EventScript_GetAideRequestInfo
+	goto_if_set FLAG_GOT_EXP_SHARE_V2_FROM_OAKS_AIDE, Route4_PokemonCenter_1F_EventScript_AlreadyGotExpShareV2
+	msgbox Route4_PokemonCenter_1F_Text_GiveItemIfCaughtEnough, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, Aide_EventScript_DeclineCheckMons
+	setvar VAR_0x8004, 1
+	specialvar VAR_RESULT, GetPokedexCount
+	buffernumberstring STR_VAR_3, VAR_0x8006
+	call Route4_PokemonCenter_1F_EventScript_GetAideRequestInfo
+	goto_if_lt VAR_0x8006, REQUIRED_CAUGHT_MONS, Aide_EventScript_HaventCaughtEnough
+	msgbox Route4_PokemonCenter_1F_Text_GreatHereYouGo
+	checkitemspace ITEM_EXP_SHARE_V2
+	goto_if_eq VAR_RESULT, FALSE, Aide_EventScript_NoRoomForItem
+	giveitem_msg Route4_PokemonCenter_1F_Text_ReceivedItemFromAide, ITEM_EXP_SHARE_V2, 1, MUS_OBTAIN_KEY_ITEM
+	setflag FLAG_GOT_EXP_SHARE_V2_FROM_OAKS_AIDE
+	msgbox Route4_PokemonCenter_1F_Text_ExplainExpShareV2
+	release
+	end
+
+Route4_PokemonCenter_1F_EventScript_AlreadyGotExpShareV2::
+	msgbox Route4_PokemonCenter_1F_Text_ExplainExpShareV2
+	release
+	end
+
+Route4_PokemonCenter_1F_EventScript_GetAideRequestInfo::
+	buffernumberstring STR_VAR_1, REQUIRED_CAUGHT_MONS
+	bufferitemname STR_VAR_2, ITEM_EXP_SHARE_V2
+	return

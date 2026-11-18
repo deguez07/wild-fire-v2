@@ -3188,6 +3188,8 @@ static void Cmd_getexp(void)
     case 2: // set exp value to the poke in expgetter_id and print message
         if (gBattleControllerExecFlags == 0)
         {
+            bool8 viaExpShareV2;
+
             item = GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_HELD_ITEM);
 
             if (item == ITEM_ENIGMA_BERRY)
@@ -3195,7 +3197,13 @@ static void Cmd_getexp(void)
             else
                 holdEffect = ItemId_GetHoldEffect(item);
 
-            if (holdEffect != HOLD_EFFECT_EXP_SHARE && !(gBattleStruct->sentInPokes & 1))
+            // With the Exp. Share V2 key item in the bag, every party mon (except eggs)
+            // is treated as if it participated in the battle.
+            viaExpShareV2 = CheckBagHasItem(ITEM_EXP_SHARE_V2, 1)
+                         && !(gBattleTypeFlags & BATTLE_TYPE_POKEDUDE)
+                         && !GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_IS_EGG);
+
+            if (holdEffect != HOLD_EFFECT_EXP_SHARE && !(gBattleStruct->sentInPokes & 1) && !viaExpShareV2)
             {
                 *(&gBattleStruct->sentInPokes) >>= 1;
                 gBattleScripting.getexpState = 5;
@@ -3219,8 +3227,8 @@ static void Cmd_getexp(void)
 
                 if (GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_HP))
                 {
-                    if (gBattleStruct->sentInPokes & 1)
-                        gBattleMoveDamage = *exp; // participant: full exp
+                    if ((gBattleStruct->sentInPokes & 1) || viaExpShareV2)
+                        gBattleMoveDamage = *exp; // participant (or Exp. Share V2): full exp
                     else if (holdEffect == HOLD_EFFECT_EXP_SHARE)
                         gBattleMoveDamage = gExpShareExp;
                     else

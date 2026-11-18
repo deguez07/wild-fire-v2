@@ -191,7 +191,7 @@
 
 // Unused?
 #define FLAG_POSTGAME_UNLOCKED   0x0AF // Set by Prof. Oak after the Hall of Fame once 150 Pokemon are caught
-#define FLAG_0x0B0               0x0B0
+#define FLAG_GOT_EXP_SHARE_V2_FROM_OAKS_AIDE 0x0B0
 #define FLAG_0x0B1               0x0B1
 #define FLAG_0x0B2               0x0B2
 #define FLAG_0x0B3               0x0B3
