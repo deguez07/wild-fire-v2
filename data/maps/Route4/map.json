@@ -175,9 +175,9 @@
       "x": 5,
       "y": 4,
       "elevation": 3,
-      "item": "ITEM_PERSIM_BERRY",
+      "item": "ITEM_LUM_BERRY",
       "flag": "FLAG_HIDDEN_ITEM_ROUTE4_PERSIM_BERRY",
-      "quantity": 1,
+      "quantity": 50,
       "underfoot": false
     },
     {
