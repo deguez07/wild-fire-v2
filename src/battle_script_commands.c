@@ -3140,17 +3140,14 @@ static void Cmd_getexp(void)
             gBattleStruct->givenExpMons |= gBitTable[gBattlerPartyIndexes[gBattlerFainted]];
         }
         break;
-    case 1: // calculate experience points to redistribute
+    case 1: // calculate experience points to give
         {
             u16 calculatedExp;
-            s32 viaSentIn;
 
-            for (viaSentIn = 0, i = 0; i < PARTY_SIZE; i++)
+            for (i = 0; i < PARTY_SIZE; i++)
             {
                 if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE || GetMonData(&gPlayerParty[i], MON_DATA_HP) == 0)
                     continue;
-                if (gBitTable[i] & sentIn)
-                    viaSentIn++;
 
                 item = GetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM);
 
@@ -3165,21 +3162,21 @@ static void Cmd_getexp(void)
 
             calculatedExp = gSpeciesInfo[gBattleMons[gBattlerFainted].species].expYield * gBattleMons[gBattlerFainted].level / 7;
 
-            if (viaExpShare) // at least one mon is getting exp via exp share
-            {
-                *exp = SAFE_DIV(calculatedExp / 2, viaSentIn);
-                if (*exp == 0)
-                    *exp = 1;
+            // Every participant gets the full amount (no splitting between
+            // participants). Lucky Egg / traded / trainer boosts are applied per mon below.
+            *exp = calculatedExp;
+            if (*exp == 0)
+                *exp = 1;
 
-                gExpShareExp = calculatedExp / 2 / viaExpShare;
+            // Exp. Share holders that did not participate each get half.
+            if (viaExpShare)
+            {
+                gExpShareExp = calculatedExp / 2;
                 if (gExpShareExp == 0)
                     gExpShareExp = 1;
             }
             else
             {
-                *exp = SAFE_DIV(calculatedExp, viaSentIn);
-                if (*exp == 0)
-                    *exp = 1;
                 gExpShareExp = 0;
             }
 
@@ -3223,12 +3220,12 @@ static void Cmd_getexp(void)
                 if (GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_HP))
                 {
                     if (gBattleStruct->sentInPokes & 1)
-                        gBattleMoveDamage = *exp;
+                        gBattleMoveDamage = *exp; // participant: full exp
+                    else if (holdEffect == HOLD_EFFECT_EXP_SHARE)
+                        gBattleMoveDamage = gExpShareExp;
                     else
                         gBattleMoveDamage = 0;
 
-                    if (holdEffect == HOLD_EFFECT_EXP_SHARE)
-                        gBattleMoveDamage += gExpShareExp;
                     if (holdEffect == HOLD_EFFECT_LUCKY_EGG)
                         gBattleMoveDamage = (gBattleMoveDamage * 150) / 100;
                     if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
