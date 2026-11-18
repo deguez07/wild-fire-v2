@@ -102,3 +102,34 @@ Route3_Text_RouteSign::
     .string "ROUTE 3\n"
     .string "MT. MOON AHEAD$"
 
+Route3_Text_BenNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+Route3_Text_CalvinNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+Route3_Text_ColtonNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+Route3_Text_GregNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+Route3_Text_JamesNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+Route3_Text_JaniceNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+Route3_Text_SallyNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+Route3_Text_RobinNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"

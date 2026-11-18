@@ -4402,6 +4402,80 @@ static void GetMedicineItemEffectMessage(u16 item)
     }
 }
 
+// Returns the MON_DATA_*_EV field and stat name affected by an EV item effect type
+static u8 GetEVItemEffectStat(u8 effectType, const u8 **statName)
+{
+    switch (effectType)
+    {
+    case ITEM_EFFECT_HP_EV:
+        *statName = gText_ItemEffect_HP;
+        return MON_DATA_HP_EV;
+    case ITEM_EFFECT_ATK_EV:
+        *statName = gText_ItemEffect_Attack;
+        return MON_DATA_ATK_EV;
+    case ITEM_EFFECT_DEF_EV:
+        *statName = gText_ItemEffect_Defense;
+        return MON_DATA_DEF_EV;
+    case ITEM_EFFECT_SPEED_EV:
+        *statName = gText_ItemEffect_Speed;
+        return MON_DATA_SPEED_EV;
+    case ITEM_EFFECT_SPATK_EV:
+        *statName = gText_ItemEffect_SpAtk;
+        return MON_DATA_SPATK_EV;
+    case ITEM_EFFECT_SPDEF_EV:
+        *statName = gText_ItemEffect_SpDef;
+        return MON_DATA_SPDEF_EV;
+    }
+    *statName = NULL;
+    return 0;
+}
+
+// EV-reducing berries (Pomeg, Kelpsy, Qualot, Hondew, Grepa, Tamato), as in Emerald
+void ItemUseCB_ReduceEV(u8 taskId, TaskFunc func)
+{
+    struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+    u16 item = gSpecialVar_ItemId;
+    const u8 *statName;
+    u8 evField = GetEVItemEffectStat(GetItemEffectType(item), &statName);
+    u16 friendship = GetMonData(mon, MON_DATA_FRIENDSHIP);
+    u16 ev = GetMonData(mon, evField);
+    bool8 cannotUseEffect = ExecuteTableBasedItemEffect(mon, item, gPartyMenu.slotId, 0);
+    u16 newFriendship = GetMonData(mon, MON_DATA_FRIENDSHIP);
+    u16 newEv = GetMonData(mon, evField);
+
+    if (statName == NULL || cannotUseEffect || (friendship == newFriendship && ev == newEv))
+    {
+        gPartyMenuUseExitCallback = FALSE;
+        PlaySE(SE_SELECT);
+        DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = func;
+    }
+    else
+    {
+        gPartyMenuUseExitCallback = TRUE;
+        PlaySE(SE_USE_ITEM);
+        ItemUse_SetQuestLogEvent(QL_EVENT_USED_ITEM, mon, item, 0xFFFF);
+        RemoveBagItem(item, 1);
+        GetMonNickname(mon, gStringVar1);
+        StringCopy(gStringVar2, statName);
+        if (friendship != newFriendship)
+        {
+            if (ev != newEv)
+                StringExpandPlaceholders(gStringVar4, gText_PkmnFriendlyBaseVar2Fell);
+            else
+                StringExpandPlaceholders(gStringVar4, gText_PkmnFriendlyBaseVar2CantFall);
+        }
+        else
+        {
+            StringExpandPlaceholders(gStringVar4, gText_PkmnAdoresBaseVar2Fell);
+        }
+        DisplayPartyMenuMessage(gStringVar4, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = func;
+    }
+}
+
 static bool8 NotUsingHPEVItemOnShedinja(struct Pokemon *mon, u16 item)
 {
     if (GetItemEffectType(item) == ITEM_EFFECT_HP_EV && GetMonData(mon, MON_DATA_SPECIES) == SPECIES_SHEDINJA)

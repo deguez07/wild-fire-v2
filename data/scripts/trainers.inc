@@ -1,96 +1,96 @@
 Route3_EventScript_Ben::
-	trainerbattle_single TRAINER_YOUNGSTER_BEN, Route3_Text_BenIntro, Route3_Text_BenDefeat
+	trainerbattle_double TRAINER_YOUNGSTER_BEN, Route3_Text_BenIntro, Route3_Text_BenDefeat, Route3_Text_BenNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route3_EventScript_BenRematch
 	msgbox Route3_Text_BenPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_BenRematch::
-	trainerbattle_rematch TRAINER_YOUNGSTER_BEN, Route3_Text_BenRematchIntro, Route3_Text_BenDefeat
+	trainerbattle_rematch_double TRAINER_YOUNGSTER_BEN, Route3_Text_BenRematchIntro, Route3_Text_BenDefeat, Route3_Text_BenNotEnoughMons
 	msgbox Route3_Text_BenPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_Calvin::
-	trainerbattle_single TRAINER_YOUNGSTER_CALVIN, Route3_Text_CalvinIntro, Route3_Text_CalvinDefeat
+	trainerbattle_double TRAINER_YOUNGSTER_CALVIN, Route3_Text_CalvinIntro, Route3_Text_CalvinDefeat, Route3_Text_CalvinNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route3_EventScript_CalvinRematch
 	msgbox Route3_Text_CalvinPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_CalvinRematch::
-	trainerbattle_rematch TRAINER_YOUNGSTER_CALVIN, Route3_Text_CalvinRematchIntro, Route3_Text_CalvinDefeat
+	trainerbattle_rematch_double TRAINER_YOUNGSTER_CALVIN, Route3_Text_CalvinRematchIntro, Route3_Text_CalvinDefeat, Route3_Text_CalvinNotEnoughMons
 	msgbox Route3_Text_CalvinPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_Colton::
-	trainerbattle_single TRAINER_BUG_CATCHER_COLTON, Route3_Text_ColtonIntro, Route3_Text_ColtonDefeat
+	trainerbattle_double TRAINER_BUG_CATCHER_COLTON, Route3_Text_ColtonIntro, Route3_Text_ColtonDefeat, Route3_Text_ColtonNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route3_EventScript_ColtonRematch
 	msgbox Route3_Text_ColtonPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_ColtonRematch::
-	trainerbattle_rematch TRAINER_BUG_CATCHER_COLTON, Route3_Text_ColtonRematchIntro, Route3_Text_ColtonDefeat
+	trainerbattle_rematch_double TRAINER_BUG_CATCHER_COLTON, Route3_Text_ColtonRematchIntro, Route3_Text_ColtonDefeat, Route3_Text_ColtonNotEnoughMons
 	msgbox Route3_Text_ColtonPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_Greg::
-	trainerbattle_single TRAINER_BUG_CATCHER_GREG, Route3_Text_GregIntro, Route3_Text_GregDefeat
+	trainerbattle_double TRAINER_BUG_CATCHER_GREG, Route3_Text_GregIntro, Route3_Text_GregDefeat, Route3_Text_GregNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route3_EventScript_GregRematch
 	msgbox Route3_Text_GregPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_GregRematch::
-	trainerbattle_rematch TRAINER_BUG_CATCHER_GREG, Route3_Text_GregRematchIntro, Route3_Text_GregDefeat
+	trainerbattle_rematch_double TRAINER_BUG_CATCHER_GREG, Route3_Text_GregRematchIntro, Route3_Text_GregDefeat, Route3_Text_GregNotEnoughMons
 	msgbox Route3_Text_GregPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_James::
-	trainerbattle_single TRAINER_BUG_CATCHER_JAMES, Route3_Text_JamesIntro, Route3_Text_JamesDefeat
+	trainerbattle_double TRAINER_BUG_CATCHER_JAMES, Route3_Text_JamesIntro, Route3_Text_JamesDefeat, Route3_Text_JamesNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route3_EventScript_JamesRematch
 	msgbox Route3_Text_JamesPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_JamesRematch::
-	trainerbattle_rematch TRAINER_BUG_CATCHER_JAMES, Route3_Text_JamesRematchIntro, Route3_Text_JamesDefeat
+	trainerbattle_rematch_double TRAINER_BUG_CATCHER_JAMES, Route3_Text_JamesRematchIntro, Route3_Text_JamesDefeat, Route3_Text_JamesNotEnoughMons
 	msgbox Route3_Text_JamesPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_Janice::
-	trainerbattle_single TRAINER_LASS_JANICE, Route3_Text_JaniceIntro, Route3_Text_JaniceDefeat
+	trainerbattle_double TRAINER_LASS_JANICE, Route3_Text_JaniceIntro, Route3_Text_JaniceDefeat, Route3_Text_JaniceNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route3_EventScript_JaniceRematch
 	msgbox Route3_Text_JanicePostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_JaniceRematch::
-	trainerbattle_rematch TRAINER_LASS_JANICE, Route3_Text_JaniceRematchIntro, Route3_Text_JaniceDefeat
+	trainerbattle_rematch_double TRAINER_LASS_JANICE, Route3_Text_JaniceRematchIntro, Route3_Text_JaniceDefeat, Route3_Text_JaniceNotEnoughMons
 	msgbox Route3_Text_JanicePostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_Sally::
-	trainerbattle_single TRAINER_LASS_SALLY, Route3_Text_SallyIntro, Route3_Text_SallyDefeat
+	trainerbattle_double TRAINER_LASS_SALLY, Route3_Text_SallyIntro, Route3_Text_SallyDefeat, Route3_Text_SallyNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route3_EventScript_SallyRematch
 	msgbox Route3_Text_SallyPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_SallyRematch::
-	trainerbattle_rematch TRAINER_LASS_SALLY, Route3_Text_SallyRematchIntro, Route3_Text_SallyDefeat
+	trainerbattle_rematch_double TRAINER_LASS_SALLY, Route3_Text_SallyRematchIntro, Route3_Text_SallyDefeat, Route3_Text_SallyNotEnoughMons
 	msgbox Route3_Text_SallyPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_Robin::
-	trainerbattle_single TRAINER_LASS_ROBIN, Route3_Text_RobinIntro, Route3_Text_RobinDefeat
+	trainerbattle_double TRAINER_LASS_ROBIN, Route3_Text_RobinIntro, Route3_Text_RobinDefeat, Route3_Text_RobinNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route3_EventScript_RobinRematch
 	msgbox Route3_Text_RobinPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route3_EventScript_RobinRematch::
-	trainerbattle_rematch TRAINER_LASS_ROBIN, Route3_Text_RobinRematchIntro, Route3_Text_RobinDefeat
+	trainerbattle_rematch_double TRAINER_LASS_ROBIN, Route3_Text_RobinRematchIntro, Route3_Text_RobinDefeat, Route3_Text_RobinNotEnoughMons
 	msgbox Route3_Text_RobinPostBattle, MSGBOX_AUTOCLOSE
 	end
 

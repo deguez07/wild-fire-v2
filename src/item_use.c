@@ -412,6 +412,12 @@ void FieldUseFunc_Medicine(u8 taskId)
     DoSetUpItemUseCallback(taskId);
 }
 
+void FieldUseFunc_ReduceEV(u8 taskId)
+{
+    gItemUseCB = ItemUseCB_ReduceEV;
+    DoSetUpItemUseCallback(taskId);
+}
+
 void FieldUseFunc_Ether(u8 taskId)
 {
     gItemUseCB = ItemUseCB_TryRestorePP;
