@@ -45,8 +45,8 @@ PalletTown_Text_CaughtXPuttingInHonestEffort::
     .string "You've caught {STR_VAR_2}…\p"
     .string "Hm, it looks as if you're putting\n"
     .string "in an honest effort.\p"
-    .string "When you manage to fill it some\n"
-    .string "more, come show me, please.$"
+    .string "When you've caught 150 kinds of\n"
+    .string "POKéMON, come show me, please.$"
 
 PalletTown_Text_CaughtXImpressiveFollowMe::
     .string "You've caught… {STR_VAR_2}!?\n"

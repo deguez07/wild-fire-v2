@@ -208,8 +208,8 @@ PalletTown_ProfessorOaksLab_Text_OakCompleteMonGuideWasMyDream::
     .string "POKéMON history!$"
 
 PalletTown_ProfessorOaksLab_Text_OakMonsAroundWorldWait::
-    .string "POKéMON around the world wait for\n"
-    .string "you, {PLAYER}!$"
+    .string "LEGENDARY POKéMON await you in\n"
+    .string "the SEVII ISLANDS, {PLAYER}!$"
 
 PalletTown_ProfessorOaksLab_Text_OakAddedNothingToPokedex::
     .string "Ah, {PLAYER}!\n"
@@ -299,11 +299,11 @@ PalletTown_ProfessorOaksLab_Text_OakFavorToAskYouPlayer::
     .string "I need you to listen closely.$"
 
 PalletTown_ProfessorOaksLab_Text_OakSightingsOfRareMons::
-    .string "Recently, there have been sightings\n"
-    .string "of many rare POKéMON species.\p"
-    .string "I'm talking about POKéMON that\n"
-    .string "have never been seen in KANTO.\p"
-    .string "I would love to go see things for\n"
+    .string "Word has reached me from the\n"
+    .string "SEVII ISLANDS.\p"
+    .string "Many LEGENDARY POKéMON have been\n"
+    .string "sighted all across the islands!\p"
+    .string "I would love to go see them for\n"
     .string "myself, but I'm much too old.\p"
     .string "Since I can't do it, {PLAYER}, I'd\n"
     .string "like you to go in my place.$"
@@ -320,8 +320,8 @@ PalletTown_ProfessorOaksLab_Text_RivalJustLetMeHandleEverything::
 PalletTown_ProfessorOaksLab_Text_OakNeedYourHelpTooNeedToSeePokedexes::
     .string "OAK: I know, I know.\n"
     .string "Of course I need your help, too.\p"
-    .string "Now, I need to see both your\n"
-    .string "POKéDEXES.$"
+    .string "You've both proven yourselves to\n"
+    .string "be true POKéMON TRAINERS.$"
 
 PalletTown_ProfessorOaksLab_Text_OakTookBothPokedexUnits::
     .string "PROF. OAK took both POKéDEX\n"
@@ -349,9 +349,24 @@ PalletTown_ProfessorOaksLab_Text_OakMustReallyWorkToFillPokedex::
 PalletTown_ProfessorOaksLab_Text_RivalIllCompleteThePokedex::
     .string "{RIVAL}: Gramps, calm down.\n"
     .string "Don't get so excited.\p"
-    .string "I'll get the POKéDEX completed,\n"
-    .string "don't you worry about a thing.\p"
+    .string "I'll find those LEGENDARY POKéMON\n"
+    .string "way before {PLAYER} does.\p"
     .string "I think I'll try looking around\n"
     .string "ONE ISLAND first…\p"
     .string "Anyways, I'm outta here!$"
 
+PalletTown_ProfessorOaksLab_Text_OakLegendariesInSeviiIslands::
+    .string "Now, {PLAYER} and {RIVAL}!\p"
+    .string "LEGENDARY POKéMON that have never\n"
+    .string "been seen in KANTO are waiting\l"
+    .string "out there in the SEVII ISLANDS.\p"
+    .string "I urge you both to go visit the\n"
+    .string "islands and seek them out!\p"
+    .string "Be sure to record everything you\n"
+    .string "find in your POKéDEX!$"
+
+PalletTown_ProfessorOaksLab_Text_OakCatch150ThenComeBack::
+    .string "Once you've caught 150 kinds of\n"
+    .string "POKéMON, come and see me.\p"
+    .string "There's an important favor I'd\n"
+    .string "like to ask of you then.$"

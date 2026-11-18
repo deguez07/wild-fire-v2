@@ -78,34 +78,10 @@ PalletTown_ProfessorOaksLab_EventScript_NationalDexScene::
 	msgbox PalletTown_ProfessorOaksLab_Text_OakNeedYourHelpTooNeedToSeePokedexes
 	call_if_eq VAR_FACING, DIR_NORTH, PalletTown_ProfessorOaksLab_EventScript_PlayerFaceOakNorth
 	call_if_eq VAR_FACING, DIR_WEST, PalletTown_ProfessorOaksLab_EventScript_PlayerFaceOakWest
-	textcolor NPC_TEXT_COLOR_NEUTRAL
-	msgbox PalletTown_ProfessorOaksLab_Text_OakTookBothPokedexUnits
-	closemessage
-	call EventScript_RestorePrevTextColor
-	call_if_eq VAR_FACING, DIR_NORTH, PalletTown_ProfessorOaksLab_EventScript_OakBringDexesToDeskNorth
-	call_if_eq VAR_FACING, DIR_SOUTH, PalletTown_ProfessorOaksLab_EventScript_OakBringDexesToDeskSouth
-	call_if_eq VAR_FACING, DIR_EAST, PalletTown_ProfessorOaksLab_EventScript_OakBringDexesToDeskEast
-	call_if_eq VAR_FACING, DIR_WEST, PalletTown_ProfessorOaksLab_EventScript_OakBringDexesToDeskWest
-	addobject LOCALID_POKEDEX_1
-	addobject LOCALID_POKEDEX_2
-	delay 30
-	msgbox PalletTown_ProfessorOaksLab_Text_OakNowTheseUnitsCanRecordMoreData
-	closemessage
-	removeobject LOCALID_POKEDEX_1
-	removeobject LOCALID_POKEDEX_2
-	delay 30
-	call_if_eq VAR_FACING, DIR_NORTH, PalletTown_ProfessorOaksLab_EventScript_OakBringDexesOverNorth
-	call_if_eq VAR_FACING, DIR_SOUTH, PalletTown_ProfessorOaksLab_EventScript_OakBringDexesOverSouth
-	call_if_eq VAR_FACING, DIR_EAST, PalletTown_ProfessorOaksLab_EventScript_OakBringDexesOverEast
-	call_if_eq VAR_FACING, DIR_WEST, PalletTown_ProfessorOaksLab_EventScript_OakBringDexesOverWest
-	textcolor NPC_TEXT_COLOR_NEUTRAL
-	playfanfare MUS_OBTAIN_KEY_ITEM
-	message PalletTown_ProfessorOaksLab_Text_PlayersPokedexWasUpgraded
-	waitmessage
-	waitfanfare
-	call EventScript_RestorePrevTextColor
-	special EnableNationalPokedex
-	msgbox PalletTown_ProfessorOaksLab_Text_OakMustReallyWorkToFillPokedex
+	applymovement LOCALID_OAKS_LAB_PROF_OAK, Common_Movement_FacePlayer
+	waitmovement 0
+	msgbox PalletTown_ProfessorOaksLab_Text_OakLegendariesInSeviiIslands
+	setflag FLAG_POSTGAME_UNLOCKED
 	msgbox PalletTown_ProfessorOaksLab_Text_RivalIllCompleteThePokedex
 	closemessage
 	playbgm MUS_RIVAL_EXIT, 0
@@ -771,7 +747,7 @@ PalletTown_ProfessorOaksLab_Movement_OakWalkToDeskSouth::
 	step_end
 
 PalletTown_ProfessorOaksLab_EventScript_RatePokedexOrTryGiveBalls::
-	setvar VAR_0x8004, 0
+	setvar VAR_0x8004, 1
 	specialvar VAR_RESULT, GetPokedexCount
 	copyvar VAR_0x8008, VAR_0x8005
 	copyvar VAR_0x8009, VAR_0x8006
@@ -904,14 +880,19 @@ PalletTown_ProfessorOaksLab_Movement_VerticalPacing:
 PalletTown_ProfessorOaksLab_EventScript_TryStartNationalDexScene::
 	call PokedexRating_EventScript_RateInPerson
 	closemessage
-	goto_if_lt VAR_0x8009, 60, PalletTown_ProfessorOaksLab_EventScript_DontStartNationalDexScene
 	goto_if_unset FLAG_WORLD_MAP_ONE_ISLAND, PalletTown_ProfessorOaksLab_EventScript_DontStartNationalDexScene
+	goto_if_lt VAR_0x8009, 150, PalletTown_ProfessorOaksLab_EventScript_NotEnoughMonsForPostgame
 	delay 30
 	msgbox PalletTown_ProfessorOaksLab_Text_OakFavorToAskYouPlayer
 	goto PalletTown_ProfessorOaksLab_EventScript_NationalDexScene
 	end
 
 PalletTown_ProfessorOaksLab_EventScript_DontStartNationalDexScene::
+	release
+	end
+
+PalletTown_ProfessorOaksLab_EventScript_NotEnoughMonsForPostgame::
+	msgbox PalletTown_ProfessorOaksLab_Text_OakCatch150ThenComeBack
 	release
 	end
 

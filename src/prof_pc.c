@@ -84,24 +84,16 @@ static const u8 *GetProfOaksRatingMessageByCount(u16 count)
     if (count < 150)
         return PokedexRating_Text_LessThan150;
 
-    if (count == KANTO_DEX_COUNT - 1)
-    {
-        // Mew doesn't count for completing the pokedex
-        if (GetSetPokedexFlag(SpeciesToNationalPokedexNum(SPECIES_MEW), 1))
-            return PokedexRating_Text_LessThan150;
-
-        gSpecialVar_Result = TRUE;
-        return PokedexRating_Text_Complete;
-    }
-
-    if (count == KANTO_DEX_COUNT)
+    // Rating is based on the National Pokedex; HasAllMons excludes event-only Pokemon
+    if (HasAllMons())
     {
         gSpecialVar_Result = TRUE;
         return PokedexRating_Text_Complete;
     }
 
-    return PokedexRating_Text_LessThan10;
+    return PokedexRating_Text_LessThan150;
 }
+
 
 void GetProfOaksRatingMessage(void)
 {
