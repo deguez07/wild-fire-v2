@@ -7,15 +7,15 @@ Route2_EventScript_ItemParalyzeHeal::
 	end
 
 ViridianForest_EventScript_ItemPokeBall::
-	finditem ITEM_POKE_BALL
+	finditem ITEM_CHOICE_BAND
 	end
 
 ViridianForest_EventScript_ItemAntidote::
-	finditem ITEM_ANTIDOTE
+	finditem ITEM_LEFTOVERS
 	end
 
 ViridianForest_EventScript_ItemPotion::
-	finditem ITEM_POTION
+	finditem ITEM_SHELL_BELL
 	end
 
 MtMoon_1F_EventScript_ItemParalyzeHeal::
