@@ -45,6 +45,19 @@ Encounter rate: 50. The data is identical for FireRed and LeafGreen.
 | Ledyba   | 9     | 25%          |
 | Spinarak | 9     | 25%          |
 
+## Route 3 (`MAP_ROUTE3`)
+
+### Grass (land encounters)
+
+Encounter rate: 21. The data is identical for FireRed and LeafGreen.
+
+| Pokémon    | Level | Total chance |
+|------------|-------|--------------|
+| Oddish     | 17    | 25%          |
+| Bellsprout | 17    | 25%          |
+| Mareep     | 17    | 25%          |
+| Pikachu    | 17    | 25%          |
+
 ## Pallet Town (`MAP_PALLET_TOWN`)
 
 ### Fishing
