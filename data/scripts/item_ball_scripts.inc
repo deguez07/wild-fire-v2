@@ -19,15 +19,15 @@ ViridianForest_EventScript_ItemPotion::
 	end
 
 MtMoon_1F_EventScript_ItemParalyzeHeal::
-	finditem ITEM_PARALYZE_HEAL
+	finditem ITEM_SHELL_BELL
 	end
 
 MtMoon_1F_EventScript_ItemTM09::
-	finditem ITEM_TM09
+	finditem ITEM_THICK_CLUB
 	end
 
 MtMoon_1F_EventScript_ItemPotion::
-	finditem ITEM_POTION
+	finditem ITEM_LIGHT_BALL
 	end
 
 MtMoon_1F_EventScript_ItemRareCandy::
@@ -35,7 +35,7 @@ MtMoon_1F_EventScript_ItemRareCandy::
 	end
 
 MtMoon_1F_EventScript_ItemEscapeRope::
-	finditem ITEM_ESCAPE_ROPE
+	finditem ITEM_FOCUS_BAND
 	end
 
 MtMoon_1F_EventScript_ItemMoonStone::
@@ -47,7 +47,7 @@ MtMoon_B2F_EventScript_ItemStarPiece::
 	end
 
 MtMoon_B2F_EventScript_ItemTM46::
-	finditem ITEM_TM46
+	finditem ITEM_LUCKY_PUNCH
 	end
 
 Route4_EventScript_ItemTM05::
@@ -415,11 +415,11 @@ ViridianForest_EventScript_ItemPotion2::
 	end
 
 MtMoon_B2F_EventScript_ItemRevive::
-	finditem ITEM_REVIVE
+	finditem ITEM_STICK
 	end
 
 MtMoon_B2F_EventScript_ItemAntidote::
-	finditem ITEM_ANTIDOTE
+	finditem ITEM_METAL_POWDER
 	end
 
 Route11_EventScript_ItemXDefend::
