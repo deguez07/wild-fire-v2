@@ -58,6 +58,45 @@ Encounter rate: 21. The data is identical for FireRed and LeafGreen.
 | Mareep     | 17    | 25%          |
 | Pikachu    | 17    | 25%          |
 
+## Mt. Moon 1F (`MAP_MT_MOON_1F`)
+
+### Grass (land encounters)
+
+Encounter rate: 7. The data is identical for FireRed and LeafGreen.
+
+| Pokémon | Level | Total chance |
+|---------|-------|--------------|
+| Numel | 20 | 25% |
+| Spinda | 20 | 25% |
+| Baltoy | 20 | 25% |
+| Swinub | 20 | 25% |
+
+## Mt. Moon B1F (`MAP_MT_MOON_B1F`)
+
+### Grass (land encounters)
+
+Encounter rate: 5. The data is identical for FireRed and LeafGreen.
+
+| Pokémon | Level | Total chance |
+|---------|-------|--------------|
+| Kecleon | 21 | 25% |
+| Magnemite | 21 | 25% |
+| Cubone | 21 | 25% |
+| Duskull | 21 | 25% |
+
+## Mt. Moon B2F (`MAP_MT_MOON_B2F`)
+
+### Grass (land encounters)
+
+Encounter rate: 7. The data is identical for FireRed and LeafGreen.
+
+| Pokémon | Level | Total chance |
+|---------|-------|--------------|
+| Aron | 22 | 25% |
+| Clefairy | 22 | 25% |
+| Snubbull | 22 | 25% |
+| Dunsparce | 22 | 25% |
+
 ## Pallet Town (`MAP_PALLET_TOWN`)
 
 ### Fishing
