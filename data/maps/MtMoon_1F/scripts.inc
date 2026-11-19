@@ -11,36 +11,85 @@ MtMoon_1F_EventScript_ZubatSign::
 	end
 
 MtMoon_1F_EventScript_Marcos::
-	trainerbattle_single TRAINER_HIKER_MARCOS, MtMoon_1F_Text_MarcosIntro, MtMoon_1F_Text_MarcosDefeat
+	trainerbattle_double TRAINER_HIKER_MARCOS, MtMoon_1F_Text_MarcosIntro, MtMoon_1F_Text_MarcosDefeat, MtMoon_1F_Text_MarcosNotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_1F_EventScript_MarcosRematch
+	msgbox MtMoon_1F_Text_MarcosPostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_1F_EventScript_MarcosRematch::
+	trainerbattle_rematch_double TRAINER_HIKER_MARCOS, MtMoon_1F_Text_MarcosIntro, MtMoon_1F_Text_MarcosDefeat, MtMoon_1F_Text_MarcosNotEnoughMons
 	msgbox MtMoon_1F_Text_MarcosPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 MtMoon_1F_EventScript_Josh::
-	trainerbattle_single TRAINER_YOUNGSTER_JOSH, MtMoon_1F_Text_JoshIntro, MtMoon_1F_Text_JoshDefeat
+	trainerbattle_double TRAINER_YOUNGSTER_JOSH, MtMoon_1F_Text_JoshIntro, MtMoon_1F_Text_JoshDefeat, MtMoon_1F_Text_JoshNotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_1F_EventScript_JoshRematch
+	msgbox MtMoon_1F_Text_JoshPostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_1F_EventScript_JoshRematch::
+	trainerbattle_rematch_double TRAINER_YOUNGSTER_JOSH, MtMoon_1F_Text_JoshIntro, MtMoon_1F_Text_JoshDefeat, MtMoon_1F_Text_JoshNotEnoughMons
 	msgbox MtMoon_1F_Text_JoshPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 MtMoon_1F_EventScript_Miriam::
-	trainerbattle_single TRAINER_LASS_MIRIAM, MtMoon_1F_Text_MiriamIntro, MtMoon_1F_Text_MiriamDefeat
+	trainerbattle_double TRAINER_LASS_MIRIAM, MtMoon_1F_Text_MiriamIntro, MtMoon_1F_Text_MiriamDefeat, MtMoon_1F_Text_MiriamNotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_1F_EventScript_MiriamRematch
+	msgbox MtMoon_1F_Text_MiriamPostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_1F_EventScript_MiriamRematch::
+	trainerbattle_rematch_double TRAINER_LASS_MIRIAM, MtMoon_1F_Text_MiriamIntro, MtMoon_1F_Text_MiriamDefeat, MtMoon_1F_Text_MiriamNotEnoughMons
 	msgbox MtMoon_1F_Text_MiriamPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 MtMoon_1F_EventScript_Iris::
-	trainerbattle_single TRAINER_LASS_IRIS, MtMoon_1F_Text_IrisIntro, MtMoon_1F_Text_IrisDefeat
+	trainerbattle_double TRAINER_LASS_IRIS, MtMoon_1F_Text_IrisIntro, MtMoon_1F_Text_IrisDefeat, MtMoon_1F_Text_IrisNotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_1F_EventScript_IrisRematch
+	msgbox MtMoon_1F_Text_IrisPostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_1F_EventScript_IrisRematch::
+	trainerbattle_rematch_double TRAINER_LASS_IRIS, MtMoon_1F_Text_IrisIntro, MtMoon_1F_Text_IrisDefeat, MtMoon_1F_Text_IrisNotEnoughMons
 	msgbox MtMoon_1F_Text_IrisPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 MtMoon_1F_EventScript_Jovan::
-	trainerbattle_single TRAINER_SUPER_NERD_JOVAN, MtMoon_1F_Text_JovanIntro, MtMoon_1F_Text_JovanDefeat
+	trainerbattle_double TRAINER_SUPER_NERD_JOVAN, MtMoon_1F_Text_JovanIntro, MtMoon_1F_Text_JovanDefeat, MtMoon_1F_Text_JovanNotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_1F_EventScript_JovanRematch
+	msgbox MtMoon_1F_Text_JovanPostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_1F_EventScript_JovanRematch::
+	trainerbattle_rematch_double TRAINER_SUPER_NERD_JOVAN, MtMoon_1F_Text_JovanIntro, MtMoon_1F_Text_JovanDefeat, MtMoon_1F_Text_JovanNotEnoughMons
 	msgbox MtMoon_1F_Text_JovanPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 MtMoon_1F_EventScript_Kent::
-	trainerbattle_single TRAINER_BUG_CATCHER_KENT, MtMoon_1F_Text_KentIntro, MtMoon_1F_Text_KentDefeat
+	trainerbattle_double TRAINER_BUG_CATCHER_KENT, MtMoon_1F_Text_KentIntro, MtMoon_1F_Text_KentDefeat, MtMoon_1F_Text_KentNotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_1F_EventScript_KentRematch
+	msgbox MtMoon_1F_Text_KentPostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_1F_EventScript_KentRematch::
+	trainerbattle_rematch_double TRAINER_BUG_CATCHER_KENT, MtMoon_1F_Text_KentIntro, MtMoon_1F_Text_KentDefeat, MtMoon_1F_Text_KentNotEnoughMons
 	msgbox MtMoon_1F_Text_KentPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 MtMoon_1F_EventScript_Robby::
-	trainerbattle_single TRAINER_BUG_CATCHER_ROBBY, MtMoon_1F_Text_RobbyIntro, MtMoon_1F_Text_RobbyDefeat
+	trainerbattle_double TRAINER_BUG_CATCHER_ROBBY, MtMoon_1F_Text_RobbyIntro, MtMoon_1F_Text_RobbyDefeat, MtMoon_1F_Text_RobbyNotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_1F_EventScript_RobbyRematch
+	msgbox MtMoon_1F_Text_RobbyPostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_1F_EventScript_RobbyRematch::
+	trainerbattle_rematch_double TRAINER_BUG_CATCHER_ROBBY, MtMoon_1F_Text_RobbyIntro, MtMoon_1F_Text_RobbyDefeat, MtMoon_1F_Text_RobbyNotEnoughMons
 	msgbox MtMoon_1F_Text_RobbyPostBattle, MSGBOX_AUTOCLOSE
 	end

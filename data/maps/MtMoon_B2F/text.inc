@@ -82,3 +82,22 @@ MtMoon_B2F_Text_ObtainedHelixFossil::
 MtMoon_B2F_Text_ObtainedDomeFossil::
     .string "Obtained the DOME FOSSIL!$"
 
+MtMoon_B2F_Text_Grunt1NotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+MtMoon_B2F_Text_Grunt2NotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+MtMoon_B2F_Text_Grunt3NotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+MtMoon_B2F_Text_Grunt4NotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
+MtMoon_B2F_Text_MiguelNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"

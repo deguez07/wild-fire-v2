@@ -174,3 +174,126 @@ Order when travelling west to east from Pewter City (based on map coordinates, n
 | 2 | Pikachu |
 | 3 | Magnemite |
 | 4 | Growlithe |
+
+## Mt. Moon
+
+All Mt. Moon trainers are double battles (`.doubleBattle = TRUE`, scripted with
+`trainerbattle_double`), like Brock's gym. B1F has no trainers.
+All except Miguel are rematchable with the VS Seeker (see `sRematches` in
+`src/vs_seeker.c`); a rematch uses the same team. Miguel is excluded because
+he is a scripted fossil encounter, not a sight-based trainer.
+
+Approximate order (based on map coordinates, not verified in game): 1F Jovan,
+Robby, Iris, Kent, Josh, Marcos, Miriam; B2F Grunt 2, Grunt 1, Miguel, Grunt 3, Grunt 4.
+
+### Mt. Moon 1F
+
+#### Super Nerd Jovan (`TRAINER_SUPER_NERD_JOVAN`) - all level 18
+
+| # | Pokemon |
+|---|---------|
+| 1 | Chinchou |
+| 2 | Magnemite |
+| 3 | Growlithe |
+| 4 | Farfetch'd |
+
+#### Lass Iris (`TRAINER_LASS_IRIS`) - all level 17
+
+| # | Pokemon |
+|---|---------|
+| 1 | Aipom |
+| 2 | Eevee |
+| 3 | Doduo |
+| 4 | Cacnea |
+
+#### Bug Catcher Robby (`TRAINER_BUG_CATCHER_ROBBY`) - all level 18
+
+| # | Pokemon |
+|---|---------|
+| 1 | Cacnea |
+| 2 | Exeggcute |
+| 3 | Mawile |
+| 4 | Anorith |
+
+#### Bug Catcher Kent (`TRAINER_BUG_CATCHER_KENT`) - all level 18
+
+| # | Pokemon |
+|---|---------|
+| 1 | Lileep |
+| 2 | Drowzee |
+| 3 | Beldum |
+| 4 | Smeargle |
+
+#### Youngster Josh (`TRAINER_YOUNGSTER_JOSH`) - all level 19
+
+| # | Pokemon |
+|---|---------|
+| 1 | Sableye |
+| 2 | Qwilfish |
+| 3 | Tentacool |
+| 4 | Murkrow |
+
+#### Lass Miriam (`TRAINER_LASS_MIRIAM`) - all level 19
+
+| # | Pokemon |
+|---|---------|
+| 1 | Voltorb |
+| 2 | Elekid |
+| 3 | Gligar |
+| 4 | Wigglytuff |
+
+#### Hiker Marcos (`TRAINER_HIKER_MARCOS`) - all level 19
+
+| # | Pokemon |
+|---|---------|
+| 1 | Nosepass |
+| 2 | Corsola |
+| 3 | Koffing |
+| 4 | Raticate |
+
+### Mt. Moon B2F
+
+#### Rocket Grunt 2 (`TRAINER_TEAM_ROCKET_GRUNT_2`) - all level 20
+
+| # | Pokemon |
+|---|---------|
+| 1 | Murkrow |
+| 2 | Gligar |
+| 3 | Houndour |
+| 4 | Koffing |
+
+#### Rocket Grunt 1 (`TRAINER_TEAM_ROCKET_GRUNT`) - all level 20
+
+| # | Pokemon |
+|---|---------|
+| 1 | Raticate |
+| 2 | Forretress |
+| 3 | Nidorino |
+| 4 | Marowak |
+
+#### Rocket Grunt 3 (`TRAINER_TEAM_ROCKET_GRUNT_3`) - all level 20
+
+| # | Pokemon |
+|---|---------|
+| 1 | Furret |
+| 2 | Nidorina |
+| 3 | Teddiursa |
+| 4 | Phanpy |
+
+#### Rocket Grunt 4 (`TRAINER_TEAM_ROCKET_GRUNT_4`) - all level 21
+
+| # | Pokemon |
+|---|---------|
+| 1 | Raichu |
+| 2 | Haunter |
+| 3 | Loudred |
+| 4 | Vibrava |
+
+#### Super Nerd Miguel (`TRAINER_SUPER_NERD_MIGUEL`) - all level 21
+
+| # | Pokemon |
+|---|---------|
+| 1 | Plusle |
+| 2 | Minun |
+| 3 | Lickitung |
+| 4 | Mightyena |

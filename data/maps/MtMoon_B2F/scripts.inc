@@ -30,12 +30,8 @@ MtMoon_B2F_EventScript_Miguel::
 
 MtMoon_B2F_EventScript_BattleMiguel::
 	textcolor NPC_TEXT_COLOR_MALE
-	message MtMoon_B2F_Text_MiguelIntro
-	waitmessage
-	playbgm MUS_ENCOUNTER_GYM_LEADER, 0
-	waitbuttonpress
 	setvar VAR_LAST_TALKED, LOCALID_MIGUEL
-	trainerbattle_no_intro TRAINER_SUPER_NERD_MIGUEL, MtMoon_B2F_Text_MiguelDefeat
+	trainerbattle_double TRAINER_SUPER_NERD_MIGUEL, MtMoon_B2F_Text_MiguelIntro, MtMoon_B2F_Text_MiguelDefeat, MtMoon_B2F_Text_MiguelNotEnoughMons
 	setvar VAR_MAP_SCENE_MT_MOON_B2F, 1
 	msgbox MtMoon_B2F_Text_WellEachTakeAFossil
 	return
@@ -116,21 +112,49 @@ MtMoon_B2F_Movement_MiguelToDomeFossil::
 	step_end
 
 MtMoon_B2F_EventScript_Grunt1::
-	trainerbattle_single TRAINER_TEAM_ROCKET_GRUNT, MtMoon_B2F_Text_Grunt1Intro, MtMoon_B2F_Text_Grunt1Defeat
+	trainerbattle_double TRAINER_TEAM_ROCKET_GRUNT, MtMoon_B2F_Text_Grunt1Intro, MtMoon_B2F_Text_Grunt1Defeat, MtMoon_B2F_Text_Grunt1NotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_B2F_EventScript_Grunt1Rematch
+	msgbox MtMoon_B2F_Text_Grunt1PostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_B2F_EventScript_Grunt1Rematch::
+	trainerbattle_rematch_double TRAINER_TEAM_ROCKET_GRUNT, MtMoon_B2F_Text_Grunt1Intro, MtMoon_B2F_Text_Grunt1Defeat, MtMoon_B2F_Text_Grunt1NotEnoughMons
 	msgbox MtMoon_B2F_Text_Grunt1PostBattle, MSGBOX_AUTOCLOSE
 	end
 
 MtMoon_B2F_EventScript_Grunt2::
-	trainerbattle_single TRAINER_TEAM_ROCKET_GRUNT_2, MtMoon_B2F_Text_Grunt2Intro, MtMoon_B2F_Text_Grunt2Defeat
+	trainerbattle_double TRAINER_TEAM_ROCKET_GRUNT_2, MtMoon_B2F_Text_Grunt2Intro, MtMoon_B2F_Text_Grunt2Defeat, MtMoon_B2F_Text_Grunt2NotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_B2F_EventScript_Grunt2Rematch
+	msgbox MtMoon_B2F_Text_Grunt2PostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_B2F_EventScript_Grunt2Rematch::
+	trainerbattle_rematch_double TRAINER_TEAM_ROCKET_GRUNT_2, MtMoon_B2F_Text_Grunt2Intro, MtMoon_B2F_Text_Grunt2Defeat, MtMoon_B2F_Text_Grunt2NotEnoughMons
 	msgbox MtMoon_B2F_Text_Grunt2PostBattle, MSGBOX_AUTOCLOSE
 	end
 
 MtMoon_B2F_EventScript_Grunt3::
-	trainerbattle_single TRAINER_TEAM_ROCKET_GRUNT_3, MtMoon_B2F_Text_Grunt3Intro, MtMoon_B2F_Text_Grunt3Defeat
+	trainerbattle_double TRAINER_TEAM_ROCKET_GRUNT_3, MtMoon_B2F_Text_Grunt3Intro, MtMoon_B2F_Text_Grunt3Defeat, MtMoon_B2F_Text_Grunt3NotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_B2F_EventScript_Grunt3Rematch
+	msgbox MtMoon_B2F_Text_Grunt3PostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_B2F_EventScript_Grunt3Rematch::
+	trainerbattle_rematch_double TRAINER_TEAM_ROCKET_GRUNT_3, MtMoon_B2F_Text_Grunt3Intro, MtMoon_B2F_Text_Grunt3Defeat, MtMoon_B2F_Text_Grunt3NotEnoughMons
 	msgbox MtMoon_B2F_Text_Grunt3PostBattle, MSGBOX_AUTOCLOSE
 	end
 
 MtMoon_B2F_EventScript_Grunt4::
-	trainerbattle_single TRAINER_TEAM_ROCKET_GRUNT_4, MtMoon_B2F_Text_Grunt4Intro, MtMoon_B2F_Text_Grunt4Defeat
+	trainerbattle_double TRAINER_TEAM_ROCKET_GRUNT_4, MtMoon_B2F_Text_Grunt4Intro, MtMoon_B2F_Text_Grunt4Defeat, MtMoon_B2F_Text_Grunt4NotEnoughMons
+	specialvar VAR_RESULT, ShouldTryRematchBattle
+	goto_if_eq VAR_RESULT, TRUE, MtMoon_B2F_EventScript_Grunt4Rematch
+	msgbox MtMoon_B2F_Text_Grunt4PostBattle, MSGBOX_AUTOCLOSE
+	end
+
+MtMoon_B2F_EventScript_Grunt4Rematch::
+	trainerbattle_rematch_double TRAINER_TEAM_ROCKET_GRUNT_4, MtMoon_B2F_Text_Grunt4Intro, MtMoon_B2F_Text_Grunt4Defeat, MtMoon_B2F_Text_Grunt4NotEnoughMons
 	msgbox MtMoon_B2F_Text_Grunt4PostBattle, MSGBOX_AUTOCLOSE
 	end
