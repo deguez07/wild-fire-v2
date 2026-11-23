@@ -51,7 +51,7 @@ MtMoon_B2F_EventScript_ItemTM46::
 	end
 
 Route4_EventScript_ItemTM05::
-	finditem ITEM_TM05
+	finditem ITEM_LUCKY_EGG
 	end
 
 Route24_EventScript_ItemTM45::
