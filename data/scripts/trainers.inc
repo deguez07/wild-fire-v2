@@ -95,14 +95,14 @@ Route3_EventScript_RobinRematch::
 	end
 
 Route4_EventScript_Crissy::
-	trainerbattle_single TRAINER_LASS_CRISSY, Route4_Text_CrissyIntro, Route4_Text_CrissyDefeat
+	trainerbattle_double TRAINER_LASS_CRISSY, Route4_Text_CrissyIntro, Route4_Text_CrissyDefeat, Route4_Text_CrissyNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route4_EventScript_CrissyRematch
 	msgbox Route4_Text_CrissyPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route4_EventScript_CrissyRematch::
-	trainerbattle_rematch TRAINER_LASS_CRISSY, Route4_Text_CrissyRematchIntro, Route4_Text_CrissyDefeat
+	trainerbattle_rematch_double TRAINER_LASS_CRISSY, Route4_Text_CrissyRematchIntro, Route4_Text_CrissyDefeat, Route4_Text_CrissyNotEnoughMons
 	msgbox Route4_Text_CrissyPostBattle, MSGBOX_AUTOCLOSE
 	end
 

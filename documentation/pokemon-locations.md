@@ -1,6 +1,6 @@
 # Pokémon Locations
 
-Source: `src/data/wild_encounters.json`
+Source: `../src/data/wild_encounters.json`
 
 ## Route 1 (`MAP_ROUTE1`)
 
@@ -169,7 +169,7 @@ Encounter rate: 100. The data is identical for FireRed and LeafGreen. Surfing (w
 
 ### Capture rate changes
 
-These are global changes to `src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone. Species whose original capture rate was already above 200 were left unchanged.
+These are global changes to `../src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone. Species whose original capture rate was already above 200 were left unchanged.
 
 | Pokémon  | Old capture rate | New capture rate |
 |----------|------------------|------------------|
@@ -204,7 +204,7 @@ Encounter rate: 100. The data is identical for FireRed and LeafGreen. Surfing (w
 
 ### Capture rate changes
 
-These are global changes to `src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone. Species whose original capture rate was already above 200 were left unchanged.
+These are global changes to `../src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone. Species whose original capture rate was already above 200 were left unchanged.
 
 | Pokémon  | Old capture rate | New capture rate |
 |----------|------------------|------------------|
@@ -242,7 +242,7 @@ Encounter rate: 100. The data is identical for FireRed and LeafGreen. Surfing (w
 
 ### Capture rate changes
 
-These are global changes to `src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone. Species whose original capture rate was already above 200 were left unchanged.
+These are global changes to `../src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone. Species whose original capture rate was already above 200 were left unchanged.
 
 | Pokémon   | Old capture rate | New capture rate |
 |-----------|------------------|------------------|
@@ -279,7 +279,7 @@ Encounter rate: 100. The data is identical for FireRed and LeafGreen. Surfing (w
 
 ### Capture rate changes
 
-These are global changes to `src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone. Species whose original capture rate was already above 200 were left unchanged.
+These are global changes to `../src/data/pokemon/species_info.h`, so they apply everywhere the species appears, not just in the Safari Zone. Species whose original capture rate was already above 200 were left unchanged.
 
 | Pokémon    | Old capture rate | New capture rate |
 |------------|------------------|------------------|

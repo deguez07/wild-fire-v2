@@ -9,6 +9,10 @@ Route4_Text_CrissyIntro::
 Route4_Text_CrissyDefeat::
     .string "After all I did to catch them!$"
 
+Route4_Text_CrissyNotEnoughMons::
+    .string "You need two POKéMON to\n"
+    .string "battle me.$"
+
 Route4_Text_CrissyPostBattle::
     .string "There might not be any more\n"
     .string "mushrooms here.\p"
