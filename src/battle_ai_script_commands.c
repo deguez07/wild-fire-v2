@@ -42,6 +42,26 @@ AI scripts.
 static EWRAM_DATA const u8 *sAIScriptPtr = NULL;
 extern u8 *gBattleAI_ScriptsTable[];
 
+static void SetAiFlagsAndLevel(u32 aiFlags);
+
+// AI scripts run at each AI level. Stage 1 of the AI upgrade only has the
+// vanilla scripts, so levels 4-10 behave the same until the new AI logic
+// is added on top of them.
+static const u32 sAiLevelScripts[AI_LEVEL_MAX + 1] =
+{
+    [AI_LEVEL_NONE] = 0,
+    [1]  = AI_SCRIPT_CHECK_BAD_MOVE,
+    [2]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT,
+    [3]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY,
+    [4]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
+    [5]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
+    [6]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
+    [7]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
+    [8]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
+    [9]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
+    [10] = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
+};
+
 static void Cmd_if_random_less_than(void);
 static void Cmd_if_random_greater_than(void);
 static void Cmd_if_random_equal(void);
@@ -335,33 +355,74 @@ void BattleAI_SetupAIData(void)
     // Fire Red, why all the returns?!?
     if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
     {
-        AI_THINKING_STRUCT->aiFlags = AI_SCRIPT_SAFARI;
+        SetAiFlagsAndLevel(AI_SCRIPT_SAFARI);
         return;
     }
     else if (gBattleTypeFlags & BATTLE_TYPE_ROAMER)
     {
-        AI_THINKING_STRUCT->aiFlags = AI_SCRIPT_ROAMING;
+        SetAiFlagsAndLevel(AI_SCRIPT_ROAMING);
         return;
     }
     else if (!(gBattleTypeFlags & (BATTLE_TYPE_TRAINER_TOWER | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_BATTLE_TOWER)) && (gTrainerBattleOpponent_A != TRAINER_SECRET_BASE))
     {
         if (gBattleTypeFlags & BATTLE_TYPE_WILD_SCRIPTED)
         {
-            AI_THINKING_STRUCT->aiFlags = AI_SCRIPT_CHECK_BAD_MOVE;
+            SetAiFlagsAndLevel(AI_SCRIPT_CHECK_BAD_MOVE);
             return;
         }
         else if (gBattleTypeFlags & BATTLE_TYPE_LEGENDARY_FRLG)
         {
-            AI_THINKING_STRUCT->aiFlags = (AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY);
+            SetAiFlagsAndLevel(AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY);
             return;
         }
     }
     else
     {
-        AI_THINKING_STRUCT->aiFlags = (AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY);
+        SetAiFlagsAndLevel(AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY);
         return;
     }
-    AI_THINKING_STRUCT->aiFlags = gTrainers[gTrainerBattleOpponent_A].aiFlags;
+    SetAiFlagsAndLevel(gTrainers[gTrainerBattleOpponent_A].aiFlags);
+}
+
+// The AI level set up by the last call to BattleAI_SetupAIData.
+u8 BattleAI_GetAiLevel(void)
+{
+    return AI_THINKING_STRUCT->aiLevel;
+}
+
+// Level for AI flags that have no AI_LEVEL, so every battle has one.
+static u8 GetAiLevelFromScripts(u32 aiFlags)
+{
+    if ((aiFlags & sAiLevelScripts[4]) == sAiLevelScripts[4])
+        return 4;
+    if (aiFlags & AI_SCRIPT_CHECK_VIABILITY)
+        return 3;
+    if (aiFlags & AI_SCRIPT_TRY_TO_FAINT)
+        return 2;
+    if (aiFlags & AI_SCRIPT_CHECK_BAD_MOVE)
+        return 1;
+    return AI_LEVEL_NONE;
+}
+
+static void SetAiFlagsAndLevel(u32 aiFlags)
+{
+    u8 level = GET_AI_LEVEL(aiFlags);
+
+    aiFlags &= ~AI_LEVEL_MASK;
+    if (level == AI_LEVEL_NONE)
+    {
+        // No level given: run the scripts exactly as listed.
+        level = GetAiLevelFromScripts(aiFlags);
+    }
+    else
+    {
+        if (level > AI_LEVEL_MAX)
+            level = AI_LEVEL_MAX;
+        aiFlags |= sAiLevelScripts[level];
+    }
+
+    AI_THINKING_STRUCT->aiFlags = aiFlags;
+    AI_THINKING_STRUCT->aiLevel = level;
 }
 
 u8 BattleAI_ChooseMoveOrAction(void)

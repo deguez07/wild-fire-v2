@@ -44,9 +44,24 @@
 #define AI_SCRIPT_DOUBLE_BATTLE (1 << 7)
 #define AI_SCRIPT_HP_AWARE (1 << 8)
 #define AI_SCRIPT_UNKNOWN (1 << 9)
-// 10 - 28 are not used
+// 10 - 23 are not used
+// 24 - 27 hold the trainer's AI level (see AI_LEVEL below)
+// 28 is not used
 #define AI_SCRIPT_ROAMING (1 << 29)
 #define AI_SCRIPT_SAFARI (1 << 30)
 #define AI_SCRIPT_FIRST_BATTLE (1 << 31)
+
+// Trainer AI level, from 1 (weakest, like vanilla route trainers) to 10 (strongest).
+// Set it in a trainer's aiFlags with AI_LEVEL(n), e.g. `.aiFlags = AI_LEVEL(5)`.
+// The level decides which AI behaviour the trainer gets. It can be combined
+// with AI_SCRIPT_* flags, which are then added on top of the level's behaviour.
+// Trainers without a level keep their AI_SCRIPT_* flags exactly as given.
+#define AI_LEVEL_SHIFT 24
+#define AI_LEVEL_MASK  (0xF << AI_LEVEL_SHIFT)
+#define AI_LEVEL_NONE  0
+#define AI_LEVEL_MIN   1
+#define AI_LEVEL_MAX   10
+#define AI_LEVEL(n)    (((n) << AI_LEVEL_SHIFT) & AI_LEVEL_MASK)
+#define GET_AI_LEVEL(flags) (((flags) & AI_LEVEL_MASK) >> AI_LEVEL_SHIFT)
 
 #endif // GUARD_CONSTANTS_BATTLE_AI_H

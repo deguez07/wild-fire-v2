@@ -276,7 +276,8 @@ struct AI_ThinkingStruct
     u32 aiFlags;
     u8 aiAction;
     u8 aiLogicId;
-    u8 filler12[6];
+    u8 aiLevel; // AI_LEVEL_NONE, or AI_LEVEL_MIN to AI_LEVEL_MAX
+    u8 filler13[5];
     u8 simulatedRNG[4];
 };
 
