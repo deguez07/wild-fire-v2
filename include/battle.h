@@ -330,6 +330,8 @@ struct StatsArray
     u16 stats[NUM_STATS];
 };
 
+struct AiLogicData;
+
 struct BattleResources
 {
     struct SecretBaseRecord *secretBase;
@@ -340,6 +342,7 @@ struct BattleResources
     struct AI_ThinkingStruct *ai;
     struct BattleHistory *battleHistory;
     struct BattleScriptsStack *AI_ScriptsStack;
+    struct AiLogicData *aiLogicData; // see battle_ai_engine.h
 };
 
 extern struct BattleResources *gBattleResources;

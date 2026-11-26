@@ -21,6 +21,7 @@
 #include "battle.h"
 #include "battle_message.h"
 #include "battle_anim.h"
+#include "battle_ai_engine.h"
 #include "battle_ai_script_commands.h"
 #include "battle_scripts.h"
 #include "reshow_battle_screen.h"
@@ -567,7 +568,8 @@ struct StatFractions
     u8 divisor;
 };
 
-static const struct StatFractions sAccuracyStageRatios[] =
+// Not static: the AI reads these tables too (battle_ai_engine.c).
+const struct StatFractions sAccuracyStageRatios[] =
 {
     { 33, 100}, // -6
     { 36, 100}, // -5
@@ -728,7 +730,7 @@ static const u16 sMovesForbiddenToCopy[] =
     METRONOME_FORBIDDEN_END
 };
 
-static const u8 sFlailHpScaleToPowerTable[] =
+const u8 sFlailHpScaleToPowerTable[] =
 {
     1, 200,
     4, 150,
@@ -753,7 +755,7 @@ static const u16 sNaturePowerMoves[] =
 };
 
 // format: min. weight (hectograms), base power
-static const u16 sWeightToDamageTable[] =
+const u16 sWeightToDamageTable[] =
 {
     100, 20,
     250, 40,
@@ -1579,6 +1581,9 @@ static void Cmd_adjustnormaldamage(void)
     u8 holdEffect, param;
 
     ApplyRandomDmgMultiplier();
+#if AI_DEBUG_CHECKS
+    AI_DebugCheckDamage();
+#endif
 
     if (gBattleMons[gBattlerTarget].item == ITEM_ENIGMA_BERRY)
     {
@@ -1622,6 +1627,9 @@ static void Cmd_adjustnormaldamage2(void)
     u8 holdEffect, param;
 
     ApplyRandomDmgMultiplier();
+#if AI_DEBUG_CHECKS
+    AI_DebugCheckDamage();
+#endif
 
     if (gBattleMons[gBattlerTarget].item == ITEM_ENIGMA_BERRY)
     {

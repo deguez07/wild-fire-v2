@@ -4,6 +4,7 @@
 #include "util.h"
 #include "item.h"
 #include "random.h"
+#include "battle_ai_engine.h"
 #include "battle_ai_script_commands.h"
 #include "constants/abilities.h"
 #include "constants/battle_ai.h"
@@ -318,6 +319,13 @@ void BattleAI_SetupAIData(void)
 
     for (i = 0; i < MAX_MON_MOVES; i++)
         AI_THINKING_STRUCT->score[i] = 100;
+
+    // The AI's view of the battle is rebuilt for every decision.
+    AI_ClearLogicData();
+#if AI_DEBUG_CHECKS
+    AI_SetLogicDataForTurn(gActiveBattler);
+    AI_ClearLogicData();
+#endif
 
     moveLimitations = CheckMoveLimitations(gActiveBattler, 0, 0xFF);
 
