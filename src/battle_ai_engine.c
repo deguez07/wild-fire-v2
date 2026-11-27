@@ -7,6 +7,7 @@
 #include "battle_util.h"
 #include "event_data.h"
 #include "item.h"
+#include "malloc.h"
 #include "pokedex.h"
 #include "pokemon.h"
 #include "util.h"
@@ -1073,75 +1074,207 @@ void AI_ClearLogicData(void)
         AI_LOGIC_DATA->ready = FALSE;
 }
 
+// What the AI knows about one battler: ability, item, HP, speed and so on.
+static void SetBattlerLogicData(u8 battler)
+{
+    struct AiLogicData *data = AI_LOGIC_DATA;
+
+    // For now the AI sees every battler's real ability and item. Limiting
+    // what it knows about the player's side by AI level comes in stage 5.
+    data->abilities[battler] = gBattleMons[battler].ability;
+    data->items[battler] = gBattleMons[battler].item;
+    data->holdEffects[battler] = GetHoldEffectOfItem(battler, data->items[battler]);
+    data->holdEffectParams[battler] = GetHoldEffectParamOfItem(battler, data->items[battler]);
+    // gLastMoves only holds moves from earlier turns while the AI decides.
+    data->lastUsedMove[battler] = (gLastMoves[battler] == MOVE_UNAVAILABLE) ? MOVE_NONE : gLastMoves[battler];
+}
+
+static void SetBattlerStateData(u8 battler)
+{
+    struct AiLogicData *data = AI_LOGIC_DATA;
+
+    if (IsBattlerAlive(battler))
+    {
+        data->hpPercents[battler] = gBattleMons[battler].hp * 100 / gBattleMons[battler].maxHP;
+        data->moveLimitations[battler] = CheckMoveLimitations(battler, 0, 0xFF);
+        data->speedStats[battler] = AI_GetBattlerSpeed(battler);
+    }
+    else
+    {
+        data->hpPercents[battler] = 0;
+        data->moveLimitations[battler] = 0;
+        data->speedStats[battler] = 0;
+    }
+}
+
+// Damage, effectiveness and accuracy of the attacker's moves on the target.
+static void CalcBattlerMovesData(u8 atk, u8 def)
+{
+    struct AiLogicData *data = AI_LOGIC_DATA;
+    u16 move;
+    u8 i;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        data->simulatedDmg[atk][def][i].minimum = 0;
+        data->simulatedDmg[atk][def][i].median = 0;
+        data->simulatedDmg[atk][def][i].maximum = 0;
+        data->effectiveness[atk][def][i] = AI_EFFECTIVENESS_0;
+        data->moveAccuracy[atk][def][i] = 0;
+
+        if (atk == def || !IsBattlerAlive(atk) || !IsBattlerAlive(def))
+            continue;
+        move = AI_GetMovesArray(atk)[i];
+        if (move == MOVE_NONE)
+            continue;
+
+        data->simulatedDmg[atk][def][i] = AI_CalcDamage(move, atk, def, &data->effectiveness[atk][def][i], FALSE);
+        if (MoveSkipsAccuracyCheck(move, atk, def))
+            data->moveAccuracy[atk][def][i] = AI_ACCURACY_SURE_HIT;
+        else
+            data->moveAccuracy[atk][def][i] = AI_GetMoveAccuracy(atk, def, move);
+    }
+}
+
 // Fills the AI's view of the battle once per decision: what it believes each
 // battler's ability and item are, then damage, effectiveness and accuracy of
 // every move slot against every other battler.
 void AI_SetLogicDataForTurn(u8 battlerAi)
 {
-    struct AiLogicData *data = AI_LOGIC_DATA;
     u8 atk, def, i;
-    u16 move;
 
-    if (data == NULL)
+    if (AI_LOGIC_DATA == NULL)
         return;
 
-    data->ready = FALSE;
+    AI_LOGIC_DATA->ready = FALSE;
+    for (i = 0; i < MAX_BATTLERS_COUNT; i++)
+        SetBattlerLogicData(i);
+    AI_LOGIC_DATA->ready = TRUE;
 
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
-    {
-        // For now the AI sees every battler's real ability and item. Limiting
-        // what it knows about the player's side by AI level comes in stage 5.
-        data->abilities[i] = gBattleMons[i].ability;
-        data->items[i] = gBattleMons[i].item;
-        data->holdEffects[i] = GetHoldEffectOfItem(i, data->items[i]);
-        data->holdEffectParams[i] = GetHoldEffectParamOfItem(i, data->items[i]);
-    }
-    data->ready = TRUE;
-
-    for (i = 0; i < MAX_BATTLERS_COUNT; i++)
-    {
-        // gLastMoves only holds moves from earlier turns while the AI decides.
-        data->lastUsedMove[i] = (gLastMoves[i] == MOVE_UNAVAILABLE) ? MOVE_NONE : gLastMoves[i];
-        if (IsBattlerAlive(i))
-        {
-            data->hpPercents[i] = gBattleMons[i].hp * 100 / gBattleMons[i].maxHP;
-            data->moveLimitations[i] = CheckMoveLimitations(i, 0, 0xFF);
-            data->speedStats[i] = AI_GetBattlerSpeed(i);
-        }
-        else
-        {
-            data->hpPercents[i] = 0;
-            data->moveLimitations[i] = 0;
-            data->speedStats[i] = 0;
-        }
-    }
+        SetBattlerStateData(i);
 
     for (atk = 0; atk < MAX_BATTLERS_COUNT; atk++)
     {
         for (def = 0; def < MAX_BATTLERS_COUNT; def++)
-        {
-            for (i = 0; i < MAX_MON_MOVES; i++)
-            {
-                data->simulatedDmg[atk][def][i].minimum = 0;
-                data->simulatedDmg[atk][def][i].median = 0;
-                data->simulatedDmg[atk][def][i].maximum = 0;
-                data->effectiveness[atk][def][i] = AI_EFFECTIVENESS_0;
-                data->moveAccuracy[atk][def][i] = 0;
-
-                if (atk == def || !IsBattlerAlive(atk) || !IsBattlerAlive(def))
-                    continue;
-                move = AI_GetMovesArray(atk)[i];
-                if (move == MOVE_NONE)
-                    continue;
-
-                data->simulatedDmg[atk][def][i] = AI_CalcDamage(move, atk, def, &data->effectiveness[atk][def][i], FALSE);
-                if (MoveSkipsAccuracyCheck(move, atk, def))
-                    data->moveAccuracy[atk][def][i] = AI_ACCURACY_SURE_HIT;
-                else
-                    data->moveAccuracy[atk][def][i] = AI_GetMoveAccuracy(atk, def, move);
-            }
-        }
+            CalcBattlerMovesData(atk, def);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Switch-in candidates: put a party mon in a battler's place to see how it
+// would do. Everything is restored afterwards.
+// ---------------------------------------------------------------------------
+
+struct AiSwitchinBackup
+{
+    struct AiLogicData logicData;
+    struct BattlePokemon battleMon;
+    struct DisableStruct disableStruct;
+    u32 statuses3;
+    u16 choicedMove;
+    u8 partyIndex;
+    u8 absentBattlerFlags;
+};
+
+// The battle data a party mon gets when it switches in (Cmd_switchindataupdate).
+static void PartyMonToBattleMon(struct Pokemon *mon, struct BattlePokemon *bmon)
+{
+    s32 i;
+
+    bmon->species = GetMonData(mon, MON_DATA_SPECIES);
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        bmon->moves[i] = GetMonData(mon, MON_DATA_MOVE1 + i);
+        bmon->pp[i] = GetMonData(mon, MON_DATA_PP1 + i);
+    }
+    bmon->ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
+    bmon->friendship = GetMonData(mon, MON_DATA_FRIENDSHIP);
+    bmon->experience = GetMonData(mon, MON_DATA_EXP);
+    bmon->hpIV = GetMonData(mon, MON_DATA_HP_IV);
+    bmon->attackIV = GetMonData(mon, MON_DATA_ATK_IV);
+    bmon->defenseIV = GetMonData(mon, MON_DATA_DEF_IV);
+    bmon->speedIV = GetMonData(mon, MON_DATA_SPEED_IV);
+    bmon->spAttackIV = GetMonData(mon, MON_DATA_SPATK_IV);
+    bmon->spDefenseIV = GetMonData(mon, MON_DATA_SPDEF_IV);
+    bmon->personality = GetMonData(mon, MON_DATA_PERSONALITY);
+    bmon->status1 = GetMonData(mon, MON_DATA_STATUS);
+    bmon->level = GetMonData(mon, MON_DATA_LEVEL);
+    bmon->hp = GetMonData(mon, MON_DATA_HP);
+    bmon->maxHP = GetMonData(mon, MON_DATA_MAX_HP);
+    bmon->attack = GetMonData(mon, MON_DATA_ATK);
+    bmon->defense = GetMonData(mon, MON_DATA_DEF);
+    bmon->speed = GetMonData(mon, MON_DATA_SPEED);
+    bmon->spAttack = GetMonData(mon, MON_DATA_SPATK);
+    bmon->spDefense = GetMonData(mon, MON_DATA_SPDEF);
+    bmon->isEgg = GetMonData(mon, MON_DATA_IS_EGG);
+    bmon->abilityNum = GetMonData(mon, MON_DATA_ABILITY_NUM);
+    bmon->otId = GetMonData(mon, MON_DATA_OT_ID);
+    bmon->item = GetMonData(mon, MON_DATA_HELD_ITEM);
+    bmon->ability = GetAbilityBySpecies(bmon->species, bmon->abilityNum);
+    bmon->type1 = gSpeciesInfo[bmon->species].types[0];
+    bmon->type2 = gSpeciesInfo[bmon->species].types[1];
+    for (i = 0; i < NUM_BATTLE_STATS; i++)
+        bmon->statStages[i] = DEFAULT_STAT_STAGE;
+    bmon->status2 = 0;
+}
+
+void *AI_BeginSwitchinSimulation(u8 battler)
+{
+    struct AiSwitchinBackup *backup = Alloc(sizeof(struct AiSwitchinBackup));
+
+    if (backup == NULL)
+        return NULL;
+    backup->logicData = *AI_LOGIC_DATA;
+    backup->battleMon = gBattleMons[battler];
+    backup->disableStruct = gDisableStructs[battler];
+    backup->statuses3 = gStatuses3[battler];
+    backup->choicedMove = gBattleStruct->choicedMove[battler];
+    backup->partyIndex = gBattlerPartyIndexes[battler];
+    backup->absentBattlerFlags = gAbsentBattlerFlags;
+    return backup;
+}
+
+// The AI's view of the battle with the party mon in the battler's place, as
+// on the turn it switches in.
+void AI_SetSwitchinCandidate(u8 battler, struct Pokemon *mon, u8 partyIndex)
+{
+    u8 i;
+
+    PartyMonToBattleMon(mon, &gBattleMons[battler]);
+    memset(&gDisableStructs[battler], 0, sizeof(struct DisableStruct));
+    gStatuses3[battler] = 0;
+    gBattleStruct->choicedMove[battler] = MOVE_NONE;
+    gBattlerPartyIndexes[battler] = partyIndex;
+    gAbsentBattlerFlags &= ~gBitTable[battler];
+
+    SetBattlerLogicData(battler);
+    AI_LOGIC_DATA->lastUsedMove[battler] = MOVE_NONE;
+    SetBattlerStateData(battler);
+    for (i = 0; i < MAX_BATTLERS_COUNT; i++)
+    {
+        if (i == battler || !IsBattlerAlive(i))
+            continue;
+        SetBattlerStateData(i); // speed comparisons can change
+        CalcBattlerMovesData(battler, i);
+        CalcBattlerMovesData(i, battler);
+    }
+}
+
+void AI_EndSwitchinSimulation(u8 battler, void *backupPtr)
+{
+    struct AiSwitchinBackup *backup = backupPtr;
+
+    if (backup == NULL)
+        return;
+    *AI_LOGIC_DATA = backup->logicData;
+    gBattleMons[battler] = backup->battleMon;
+    gDisableStructs[battler] = backup->disableStruct;
+    gStatuses3[battler] = backup->statuses3;
+    gBattleStruct->choicedMove[battler] = backup->choicedMove;
+    gBattlerPartyIndexes[battler] = backup->partyIndex;
+    gAbsentBattlerFlags = backup->absentBattlerFlags;
+    Free(backup);
 }
 
 // ---------------------------------------------------------------------------

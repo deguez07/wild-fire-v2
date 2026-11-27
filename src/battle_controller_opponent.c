@@ -14,6 +14,7 @@
 #include "battle_tower.h"
 #include "battle_gfx_sfx_util.h"
 #include "battle_ai_script_commands.h"
+#include "battle_ai_switch.h"
 #include "battle_ai_switch_items.h"
 #include "trainer_tower.h"
 #include "constants/battle_anim.h"
@@ -1413,7 +1414,11 @@ static void OpponentHandleChoosePokemon(void)
 
     if (*(gBattleStruct->AI_monToSwitchIntoId + (GetBattlerPosition(gActiveBattler) >> 1)) == PARTY_SIZE)
     {
-        chosenMonId = GetMostSuitableMonToSwitchInto();
+        // Trainers at AI level 5+ choose with the AI ported from pokefirered-expansion.
+        if (BattleAI_GetSwitchFlags() != 0)
+            chosenMonId = AI_ChooseMonToSendIn(gActiveBattler);
+        else
+            chosenMonId = GetMostSuitableMonToSwitchInto();
 
         if (chosenMonId == PARTY_SIZE)
         {

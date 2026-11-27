@@ -91,6 +91,8 @@ struct AiLogicData
     u16 lastUsedMove[MAX_BATTLERS_COUNT]; // last move each battler used (previous turns only)
     u16 partnerMove;                      // move the AI's partner chose this turn (doubles)
     s32 moveScores[MAX_MON_MOVES];        // scores of the ported AI while it decides
+    u16 prevTurnSpecies[MAX_BATTLERS_COUNT]; // species on the field at the AI's last switch decision
+    u8 mostSuitableMonId[MAX_BATTLERS_COUNT]; // best switch-in found by the switching AI, PARTY_SIZE if none
     bool8 shouldConsiderExplosion;        // rolled once per decision, more likely at low HP
     bool8 ready; // TRUE once AI_SetLogicDataForTurn has run for this decision
 };
@@ -155,6 +157,13 @@ bool32 AI_IsSlower(u8 battlerAi, u8 battler, u16 aiMove, u16 otherMove, bool32 c
 // Per-decision cache
 void AI_SetLogicDataForTurn(u8 battlerAi);
 void AI_ClearLogicData(void);
+
+// Switch-in simulation. Begin saves the battler's data, SetSwitchinCandidate
+// puts a party mon in its place (and updates the cache), End restores
+// everything. Only call SetSwitchinCandidate between Begin and End.
+void *AI_BeginSwitchinSimulation(u8 battler);
+void AI_SetSwitchinCandidate(u8 battler, struct Pokemon *mon, u8 partyIndex);
+void AI_EndSwitchinSimulation(u8 battler, void *backup);
 
 #if AI_DEBUG_CHECKS
 void AI_DebugCheckDamage(void);

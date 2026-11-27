@@ -79,4 +79,10 @@
 #define AI_LOGIC_PREFER_BATON_PASS      (1 << 6)  // set up stats, then Baton Pass
 #define AI_LOGIC_HP_AWARE               (1 << 7)  // choose effects by its own and the target's HP
 
+// Switching steps of the ported AI (src/battle_ai_switch.c), picked by level.
+// Levels 1-4 use the vanilla switching.
+#define AI_SWITCH_SMART_MON_CHOICES (1 << 0) // level 5+: send in the mon that wins the matchup
+#define AI_SWITCH_SMART_SWITCHING   (1 << 1) // level 6+: switch out of bad matchups and bad situations
+#define AI_SWITCH_ACE_POKEMON       (1 << 2) // level 8+: the last mon in the party comes out last
+
 #endif // GUARD_CONSTANTS_BATTLE_AI_H

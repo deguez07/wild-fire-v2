@@ -19,18 +19,23 @@ scored by the AI logic ported from pokefirered-expansion (Gen 1-3 moves and
 Gen 3 rules only), which is built on exact damage, speed and accuracy
 estimates for every move.
 
-| Level | Now (stage 3) | Planned |
+| Level | Now (stage 4) | Planned |
 |---|---|---|
 | 1 | Avoids moves that would fail (vanilla route trainers) | Same |
 | 2 | + goes for KOs | Same |
 | 3 | + scores moves by usefulness (vanilla leaders) | Same |
 | 4 | Ported move scoring: avoids useless moves, goes for KOs, picks the best damaging move, scores status and setup moves by the situation, considers its own and your HP | Same |
-| 5 | + bonus for moves that KO in one or two hits | + better replacements after a KO |
-| 6 | Same as 5 | + switches out of bad matchups |
-| 7 | Same as 5 | + predicts your moves and switches |
-| 8 | Same as 5 | + guesses your likely moves, keeps its ace for last |
-| 9 | Same as 5 | + knows your moves, items and abilities |
-| 10 | Same as 5 | Everything, no deliberate mistakes |
+| 5 | + bonus for moves that KO in one or two hits; sends in the mon that wins the matchup (after a KO, or when it switches) | Same |
+| 6 | + smart switching: leaves bad matchups, Perish Song, Yawn, bad status, Encore and stat drops; switches to absorbers and trappers | Same |
+| 7 | Same as 6 | + predicts your moves and switches |
+| 8 | + keeps its ace (last mon in the party) for last | + guesses your likely moves |
+| 9 | Same as 8 | + knows your moves, items and abilities |
+| 10 | Same as 8 | Everything, no deliberate mistakes |
+
+Levels 1-4 switch like vanilla FireRed. Level 5 uses the expansion AI's basic
+switching checks (Wonder Guard, Perish Song, Natural Cure, resisting the last
+hit). In double battles, level 5+ picks switch-ins by type matchup and damage;
+the full matchup check is for single battles.
 
 From level 4 on, extra flags turn on more of the ported AI:
 `AI_SCRIPT_SETUP_FIRST_TURN` (sets up on turn 1), `AI_SCRIPT_RISKY` (prefers
