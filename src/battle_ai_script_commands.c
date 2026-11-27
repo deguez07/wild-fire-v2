@@ -5,6 +5,7 @@
 #include "item.h"
 #include "random.h"
 #include "battle_ai_engine.h"
+#include "battle_ai_main.h"
 #include "battle_ai_script_commands.h"
 #include "constants/abilities.h"
 #include "constants/battle_ai.h"
@@ -45,22 +46,36 @@ extern u8 *gBattleAI_ScriptsTable[];
 
 static void SetAiFlagsAndLevel(u32 aiFlags);
 
-// AI scripts run at each AI level. Stage 1 of the AI upgrade only has the
-// vanilla scripts, so levels 4-10 behave the same until the new AI logic
-// is added on top of them.
-static const u32 sAiLevelScripts[AI_LEVEL_MAX + 1] =
+// Vanilla AI scripts run at levels 1-3.
+static const u32 sAiLevelScripts[AI_LEVEL_SMART_SCORING] =
 {
     [AI_LEVEL_NONE] = 0,
-    [1]  = AI_SCRIPT_CHECK_BAD_MOVE,
-    [2]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT,
-    [3]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY,
-    [4]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
-    [5]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
-    [6]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
-    [7]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
-    [8]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
-    [9]  = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
-    [10] = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY | AI_SCRIPT_HP_AWARE,
+    [1] = AI_SCRIPT_CHECK_BAD_MOVE,
+    [2] = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT,
+    [3] = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY,
+};
+
+// Move scoring steps of the ported AI (battle_ai_main.c) at levels 4-10.
+// Levels 6-10 add switching and prediction in later stages of the AI upgrade.
+#define AI_LOGIC_BASIC (AI_LOGIC_CHECK_BAD_MOVE | AI_LOGIC_TRY_TO_FAINT | AI_LOGIC_CHECK_VIABILITY | AI_LOGIC_HP_AWARE)
+static const u16 sAiLevelLogic[AI_LEVEL_MAX + 1] =
+{
+    [4]  = AI_LOGIC_BASIC,
+    [5]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
+    [6]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
+    [7]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
+    [8]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
+    [9]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
+    [10] = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
+};
+
+// Extra AI_SCRIPT_* flags on a trainer at level 4+ turn on the matching step.
+static const u32 sScriptToLogic[][2] =
+{
+    {AI_SCRIPT_SETUP_FIRST_TURN,      AI_LOGIC_FORCE_SETUP_FIRST_TURN},
+    {AI_SCRIPT_RISKY,                 AI_LOGIC_RISKY},
+    {AI_SCRIPT_PREFER_STRONGEST_MOVE, AI_LOGIC_TRY_TO_2HKO},
+    {AI_SCRIPT_PREFER_BATON_PASS,     AI_LOGIC_PREFER_BATON_PASS},
 };
 
 static void Cmd_if_random_less_than(void);
@@ -398,11 +413,10 @@ u8 BattleAI_GetAiLevel(void)
     return AI_THINKING_STRUCT->aiLevel;
 }
 
-// Level for AI flags that have no AI_LEVEL, so every battle has one.
+// Level for AI flags that have no AI_LEVEL, so every battle has one. These
+// battles always use the vanilla scripts, so the level is at most 3.
 static u8 GetAiLevelFromScripts(u32 aiFlags)
 {
-    if ((aiFlags & sAiLevelScripts[4]) == sAiLevelScripts[4])
-        return 4;
     if (aiFlags & AI_SCRIPT_CHECK_VIABILITY)
         return 3;
     if (aiFlags & AI_SCRIPT_TRY_TO_FAINT)
@@ -415,6 +429,8 @@ static u8 GetAiLevelFromScripts(u32 aiFlags)
 static void SetAiFlagsAndLevel(u32 aiFlags)
 {
     u8 level = GET_AI_LEVEL(aiFlags);
+    u16 logicFlags = 0;
+    s32 i;
 
     aiFlags &= ~AI_LEVEL_MASK;
     if (level == AI_LEVEL_NONE)
@@ -426,10 +442,26 @@ static void SetAiFlagsAndLevel(u32 aiFlags)
     {
         if (level > AI_LEVEL_MAX)
             level = AI_LEVEL_MAX;
-        aiFlags |= sAiLevelScripts[level];
+
+        if (level < AI_LEVEL_SMART_SCORING)
+        {
+            aiFlags |= sAiLevelScripts[level];
+        }
+        else
+        {
+            // The ported AI scores the moves instead of the vanilla scripts.
+            logicFlags = sAiLevelLogic[level];
+            for (i = 0; i < ARRAY_COUNT(sScriptToLogic); i++)
+            {
+                if (aiFlags & sScriptToLogic[i][0])
+                    logicFlags |= sScriptToLogic[i][1];
+            }
+            aiFlags = 0;
+        }
     }
 
     AI_THINKING_STRUCT->aiFlags = aiFlags;
+    AI_THINKING_STRUCT->aiLogicFlags = logicFlags;
     AI_THINKING_STRUCT->aiLevel = level;
 }
 
@@ -441,6 +473,9 @@ u8 BattleAI_ChooseMoveOrAction(void)
     s32 i;
 
     RecordLastUsedMoveByTarget();
+    if (AI_THINKING_STRUCT->aiLogicFlags != 0)
+        return BattleAI_ChooseMoveIndexWithLogic();
+
     while (AI_THINKING_STRUCT->aiFlags != 0)
     {
         if (AI_THINKING_STRUCT->aiFlags & 1)

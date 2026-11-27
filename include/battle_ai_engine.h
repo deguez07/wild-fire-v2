@@ -53,6 +53,21 @@ typedef u16 uq4_12_t;
 #define DONT_CONSIDER_PRIORITY 0
 #define CONSIDER_PRIORITY      1
 
+// Whose damage AI_GetDamage estimates: the AI's own attacks, or attacks it
+// expects to take. A risky AI assumes high rolls for its attacks and low rolls
+// for the attacks it takes; otherwise the median roll is used.
+#define AI_ATTACKING 0
+#define AI_DEFENDING 1
+
+// For GetNoOfHitsToKOBattler, as in the expansion AI. Gen 3 has nothing that
+// surely survives a KO hit (Focus Band is random), so both give the same result.
+#define DONT_CONSIDER_ENDURE 0
+#define CONSIDER_ENDURE      1
+
+// moveAccuracy value for moves that skip the accuracy check, so they beat
+// moves with 100% accuracy when the AI compares them.
+#define AI_ACCURACY_SURE_HIT 101
+
 struct SimulatedDamage
 {
     u16 minimum;
@@ -72,7 +87,11 @@ struct AiLogicData
     u32 speedStats[MAX_BATTLERS_COUNT];
     struct SimulatedDamage simulatedDmg[MAX_BATTLERS_COUNT][MAX_BATTLERS_COUNT][MAX_MON_MOVES];
     uq4_12_t effectiveness[MAX_BATTLERS_COUNT][MAX_BATTLERS_COUNT][MAX_MON_MOVES];
-    u8 moveAccuracy[MAX_BATTLERS_COUNT][MAX_BATTLERS_COUNT][MAX_MON_MOVES];
+    u8 moveAccuracy[MAX_BATTLERS_COUNT][MAX_BATTLERS_COUNT][MAX_MON_MOVES]; // AI_ACCURACY_SURE_HIT if it can't miss
+    u16 lastUsedMove[MAX_BATTLERS_COUNT]; // last move each battler used (previous turns only)
+    u16 partnerMove;                      // move the AI's partner chose this turn (doubles)
+    s32 moveScores[MAX_MON_MOVES];        // scores of the ported AI while it decides
+    bool8 shouldConsiderExplosion;        // rolled once per decision, more likely at low HP
     bool8 ready; // TRUE once AI_SetLogicDataForTurn has run for this decision
 };
 
@@ -108,15 +127,24 @@ bool32 AI_BattlerHasType(u8 battler, u8 type);
 uq4_12_t AI_GetTypeEffectiveness(u8 moveType, u8 battlerDef);
 uq4_12_t AI_GetMoveEffectiveness(u16 move, u8 battlerAtk, u8 battlerDef);
 bool32 AI_IsMoveBlockedByAbility(u16 move, u8 battlerAtk, u8 battlerDef);
+bool32 AI_IsAbilityOnField(u8 ability);
+
+// Weather that currently has an effect (0 under Cloud Nine / Air Lock).
+u16 AI_GetWeather(void);
+
+// The moves the AI considers a battler to have. For now every battler's real
+// moves; stage 5 limits what the AI knows about the player's moves by level.
+u16 *AI_GetMovesArray(u8 battler);
 
 // Damage
 struct SimulatedDamage AI_CalcDamage(u16 move, u8 battlerAtk, u8 battlerDef, uq4_12_t *effectiveness, bool32 isCrit);
-u32 AI_GetDamage(u8 battlerAtk, u8 battlerDef, u8 moveIndex);
+u32 AI_GetDamage(u8 battlerAtk, u8 battlerDef, u8 moveIndex, u8 calcContext);
 u32 GetNoOfHitsToKO(u32 dmg, s32 hp);
-u32 GetNoOfHitsToKOBattler(u8 battlerAtk, u8 battlerDef, u8 moveIndex);
+u32 GetNoOfHitsToKOBattler(u8 battlerAtk, u8 battlerDef, u8 moveIndex, u8 calcContext, u8 considerEndure);
 
 // Accuracy, from 0 to 100
 u8 AI_GetMoveAccuracy(u8 battlerAtk, u8 battlerDef, u16 move);
+bool32 AI_CanHitSemiInvulnerable(u16 move, u8 battlerDef);
 
 // Speed and turn order (Quick Claw is never counted on)
 u32 AI_GetBattlerSpeed(u8 battler);

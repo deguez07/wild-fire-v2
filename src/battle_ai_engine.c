@@ -11,6 +11,7 @@
 #include "pokemon.h"
 #include "util.h"
 #include "constants/abilities.h"
+#include "constants/battle_ai.h"
 #include "constants/battle_move_effects.h"
 #include "constants/hold_effects.h"
 #include "constants/items.h"
@@ -307,8 +308,20 @@ bool32 AI_BattlerHasType(u8 battler, u8 type)
     return IS_BATTLER_OF_TYPE(battler, type);
 }
 
+u16 *AI_GetMovesArray(u8 battler)
+{
+    return gBattleMons[battler].moves;
+}
+
+u16 AI_GetWeather(void)
+{
+    if (!AI_WeatherHasEffect())
+        return 0;
+    return gBattleWeather;
+}
+
 // Is any battler on the field known to have this ability?
-static bool32 AI_IsAbilityOnField(u8 ability)
+bool32 AI_IsAbilityOnField(u8 ability)
 {
     s32 i;
 
@@ -393,6 +406,18 @@ uq4_12_t AI_GetMoveEffectiveness(u16 move, u8 battlerAtk, u8 battlerDef)
 
     if (move == MOVE_NONE || move == MOVE_STRUGGLE)
         return AI_EFFECTIVENESS_1;
+
+    // Moves without power only check types when their battle script runs
+    // typecalc: of those, only Thunder Wave, Stun Spore and Glare. Moves on
+    // the user or the field are never blocked by the target.
+    if (gBattleMoves[move].power == 0 && gBattleMoves[move].effect != EFFECT_PARALYZE)
+    {
+        if (gBattleMoves[move].target & (MOVE_TARGET_USER | MOVE_TARGET_OPPONENTS_FIELD))
+            return AI_EFFECTIVENESS_1;
+        if (AI_IsMoveBlockedByAbility(move, battlerAtk, battlerDef))
+            return AI_EFFECTIVENESS_0;
+        return AI_EFFECTIVENESS_1;
+    }
 
     moveType = GetBattleMoveType(move, battlerAtk);
 
@@ -841,14 +866,25 @@ struct SimulatedDamage AI_CalcDamage(u16 move, u8 battlerAtk, u8 battlerDef, uq4
     return dmg;
 }
 
-// Median damage of a move slot, from the per-decision cache when it is ready.
-u32 AI_GetDamage(u8 battlerAtk, u8 battlerDef, u8 moveIndex)
+// Expected damage of a move slot, from the per-decision cache when it is ready.
+// A risky AI expects high rolls on its attacks and low rolls on the attacks it
+// takes. Everyone else expects the median roll.
+u32 AI_GetDamage(u8 battlerAtk, u8 battlerDef, u8 moveIndex, u8 calcContext)
 {
-    u16 move = gBattleMons[battlerAtk].moves[moveIndex];
+    struct SimulatedDamage dmg;
+    bool32 risky = (gBattleResources != NULL && gBattleResources->ai != NULL
+                 && (gBattleResources->ai->aiLogicFlags & AI_LOGIC_RISKY));
 
     if (AiKnowledgeReady())
-        return AI_LOGIC_DATA->simulatedDmg[battlerAtk][battlerDef][moveIndex].median;
-    return AI_CalcDamage(move, battlerAtk, battlerDef, NULL, FALSE).median;
+        dmg = AI_LOGIC_DATA->simulatedDmg[battlerAtk][battlerDef][moveIndex];
+    else
+        dmg = AI_CalcDamage(AI_GetMovesArray(battlerAtk)[moveIndex], battlerAtk, battlerDef, NULL, FALSE);
+
+    if (risky && calcContext == AI_ATTACKING && GetBattlerSide(battlerAtk) == B_SIDE_OPPONENT)
+        return dmg.maximum;
+    if (risky && calcContext == AI_DEFENDING && GetBattlerSide(battlerDef) == B_SIDE_OPPONENT)
+        return dmg.minimum;
+    return dmg.median;
 }
 
 u32 GetNoOfHitsToKO(u32 dmg, s32 hp)
@@ -858,16 +894,16 @@ u32 GetNoOfHitsToKO(u32 dmg, s32 hp)
     return hp / dmg + (hp % dmg != 0);
 }
 
-u32 GetNoOfHitsToKOBattler(u8 battlerAtk, u8 battlerDef, u8 moveIndex)
+u32 GetNoOfHitsToKOBattler(u8 battlerAtk, u8 battlerDef, u8 moveIndex, u8 calcContext, u8 considerEndure)
 {
-    return GetNoOfHitsToKO(AI_GetDamage(battlerAtk, battlerDef, moveIndex), gBattleMons[battlerDef].hp);
+    return GetNoOfHitsToKO(AI_GetDamage(battlerAtk, battlerDef, moveIndex, calcContext), gBattleMons[battlerDef].hp);
 }
 
 // ---------------------------------------------------------------------------
 // Accuracy (Cmd_accuracycheck and AccuracyCalcHelper)
 // ---------------------------------------------------------------------------
 
-static bool32 CanHitSemiInvulnerable(u16 move, u8 battlerDef)
+bool32 AI_CanHitSemiInvulnerable(u16 move, u8 battlerDef)
 {
     u8 effect = gBattleMoves[move].effect;
 
@@ -880,6 +916,24 @@ static bool32 CanHitSemiInvulnerable(u16 move, u8 battlerDef)
     return TRUE;
 }
 
+// Moves that hit without an accuracy roll (unless the target is out of reach).
+static bool32 MoveSkipsAccuracyCheck(u16 move, u8 battlerAtk, u8 battlerDef)
+{
+    u8 effect = gBattleMoves[move].effect;
+
+    if (!AI_CanHitSemiInvulnerable(move, battlerDef))
+        return FALSE;
+    if ((gStatuses3[battlerDef] & STATUS3_ALWAYS_HITS) && gDisableStructs[battlerDef].battlerWithSureHit == battlerAtk)
+        return TRUE;
+    if (effect == EFFECT_OHKO)
+        return FALSE;
+    if (effect == EFFECT_ALWAYS_HIT || effect == EFFECT_VITAL_THROW || gBattleMoves[move].accuracy == 0)
+        return TRUE;
+    if (effect == EFFECT_THUNDER && AI_WeatherHasEffect() && (gBattleWeather & B_WEATHER_RAIN))
+        return TRUE;
+    return FALSE;
+}
+
 u8 AI_GetMoveAccuracy(u8 battlerAtk, u8 battlerDef, u16 move)
 {
     u8 effect = gBattleMoves[move].effect;
@@ -890,7 +944,7 @@ u8 AI_GetMoveAccuracy(u8 battlerAtk, u8 battlerDef, u16 move)
 
     if ((gStatuses3[battlerDef] & STATUS3_ALWAYS_HITS) && gDisableStructs[battlerDef].battlerWithSureHit == battlerAtk)
         return 100;
-    if (!CanHitSemiInvulnerable(move, battlerDef))
+    if (!AI_CanHitSemiInvulnerable(move, battlerDef))
         return 0;
     if (effect == EFFECT_ALWAYS_HIT || effect == EFFECT_VITAL_THROW || moveAcc == 0)
         return 100;
@@ -1046,6 +1100,8 @@ void AI_SetLogicDataForTurn(u8 battlerAi)
 
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
     {
+        // gLastMoves only holds moves from earlier turns while the AI decides.
+        data->lastUsedMove[i] = (gLastMoves[i] == MOVE_UNAVAILABLE) ? MOVE_NONE : gLastMoves[i];
         if (IsBattlerAlive(i))
         {
             data->hpPercents[i] = gBattleMons[i].hp * 100 / gBattleMons[i].maxHP;
@@ -1074,12 +1130,15 @@ void AI_SetLogicDataForTurn(u8 battlerAi)
 
                 if (atk == def || !IsBattlerAlive(atk) || !IsBattlerAlive(def))
                     continue;
-                move = gBattleMons[atk].moves[i];
+                move = AI_GetMovesArray(atk)[i];
                 if (move == MOVE_NONE)
                     continue;
 
                 data->simulatedDmg[atk][def][i] = AI_CalcDamage(move, atk, def, &data->effectiveness[atk][def][i], FALSE);
-                data->moveAccuracy[atk][def][i] = AI_GetMoveAccuracy(atk, def, move);
+                if (MoveSkipsAccuracyCheck(move, atk, def))
+                    data->moveAccuracy[atk][def][i] = AI_ACCURACY_SURE_HIT;
+                else
+                    data->moveAccuracy[atk][def][i] = AI_GetMoveAccuracy(atk, def, move);
             }
         }
     }
@@ -1124,7 +1183,10 @@ void AI_DebugCheckDamage(void)
     s32 real = gBattleMoveDamage, hit, minimum;
 
     // A confused battler hitting itself uses its own formula (atk == def).
-    if (gCurrentMove == MOVE_NONE || atk == def || IsDamageCheckSkipped(effect))
+    // A move that missed or had no effect (e.g. Levitate) deals no damage, even
+    // though gBattleMoveDamage still holds a number.
+    if (gCurrentMove == MOVE_NONE || atk == def || IsDamageCheckSkipped(effect)
+     || (gMoveResultFlags & (MOVE_RESULT_MISSED | MOVE_RESULT_DOESNT_AFFECT_FOE | MOVE_RESULT_FAILED)))
     {
         DebugPrintfLevel(MGBA_LOG_INFO, "AIDMG SKIP move=%d", gCurrentMove);
         return;

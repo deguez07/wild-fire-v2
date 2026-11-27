@@ -64,4 +64,19 @@
 #define AI_LEVEL(n)    (((n) << AI_LEVEL_SHIFT) & AI_LEVEL_MASK)
 #define GET_AI_LEVEL(flags) (((flags) & AI_LEVEL_MASK) >> AI_LEVEL_SHIFT)
 
+// From this level on, moves are scored by the AI logic ported from
+// pokefirered-expansion (src/battle_ai_main.c) instead of the vanilla scripts.
+#define AI_LEVEL_SMART_SCORING 4
+
+// Move scoring steps of the ported AI, run in this order (expansion's AI_FLAG_*).
+// The trainer's level picks them; see SetAiFlagsAndLevel.
+#define AI_LOGIC_CHECK_BAD_MOVE         (1 << 0)  // avoid moves that fail or do nothing
+#define AI_LOGIC_TRY_TO_FAINT           (1 << 1)  // go for KOs, use priority when about to be KO'd
+#define AI_LOGIC_CHECK_VIABILITY        (1 << 2)  // score move effects and pick the best damaging move
+#define AI_LOGIC_FORCE_SETUP_FIRST_TURN (1 << 3)  // prefer setup moves on the first turn
+#define AI_LOGIC_RISKY                  (1 << 4)  // prefer high-damage, risky moves; assumes high damage rolls
+#define AI_LOGIC_TRY_TO_2HKO            (1 << 5)  // bonus for moves that KO in one or two hits
+#define AI_LOGIC_PREFER_BATON_PASS      (1 << 6)  // set up stats, then Baton Pass
+#define AI_LOGIC_HP_AWARE               (1 << 7)  // choose effects by its own and the target's HP
+
 #endif // GUARD_CONSTANTS_BATTLE_AI_H

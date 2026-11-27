@@ -14,25 +14,32 @@ Trainers without `AI_LEVEL` keep their `AI_SCRIPT_*` flags exactly as before
 
 ## What each level does
 
-The level system is stage 1 of the AI upgrade, so for now it only uses the
-vanilla FireRed AI scripts. Levels 4-10 behave the same until the new AI logic
-from pokefirered-expansion is ported in the later stages.
+Levels 1-3 use the vanilla FireRed AI scripts. From level 4 on, moves are
+scored by the AI logic ported from pokefirered-expansion (Gen 1-3 moves and
+Gen 3 rules only), which is built on exact damage, speed and accuracy
+estimates for every move.
 
-| Level | Now (stage 1) | Planned |
+| Level | Now (stage 3) | Planned |
 |---|---|---|
 | 1 | Avoids moves that would fail (vanilla route trainers) | Same |
 | 2 | + goes for KOs | Same |
 | 3 | + scores moves by usefulness (vanilla leaders) | Same |
-| 4 | + considers its own and your HP | + damage-based move scoring |
-| 5 | Same as 4 | + 2-hit KO checks, better replacements after a KO |
-| 6 | Same as 4 | + switches out of bad matchups |
-| 7 | Same as 4 | + predicts your moves and switches |
-| 8 | Same as 4 | + guesses your likely moves, keeps its ace for last |
-| 9 | Same as 4 | + knows your moves, items and abilities |
-| 10 | Same as 4 | Everything, no deliberate mistakes |
+| 4 | Ported move scoring: avoids useless moves, goes for KOs, picks the best damaging move, scores status and setup moves by the situation, considers its own and your HP | Same |
+| 5 | + bonus for moves that KO in one or two hits | + better replacements after a KO |
+| 6 | Same as 5 | + switches out of bad matchups |
+| 7 | Same as 5 | + predicts your moves and switches |
+| 8 | Same as 5 | + guesses your likely moves, keeps its ace for last |
+| 9 | Same as 5 | + knows your moves, items and abilities |
+| 10 | Same as 5 | Everything, no deliberate mistakes |
 
-Levels 1-8 never know your moves, items or abilities until it has seen them
-(from stage 5 on). No level reads the move or switch you picked that turn.
+From level 4 on, extra flags turn on more of the ported AI:
+`AI_SCRIPT_SETUP_FIRST_TURN` (sets up on turn 1), `AI_SCRIPT_RISKY` (prefers
+risky high-damage moves, assumes high rolls), `AI_SCRIPT_PREFER_STRONGEST_MOVE`
+(the 2-hit KO bonus) and `AI_SCRIPT_PREFER_BATON_PASS` (sets up, then passes).
+
+Until stage 5, the level 4+ AI sees your moves, held item and ability. Stage 5
+limits that to levels 9-10. No level reads the move or switch you picked that
+turn: the AI only uses the move you used last turn.
 
 ## How the starting levels were chosen
 

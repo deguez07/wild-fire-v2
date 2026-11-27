@@ -276,8 +276,9 @@ struct AI_ThinkingStruct
     u32 aiFlags;
     u8 aiAction;
     u8 aiLogicId;
+    u16 aiLogicFlags; // AI_LOGIC_* steps of the ported AI; 0 when the vanilla scripts decide
     u8 aiLevel; // AI_LEVEL_NONE, or AI_LEVEL_MIN to AI_LEVEL_MAX
-    u8 filler13[5];
+    u8 filler15[3];
     u8 simulatedRNG[4];
 };
 
