@@ -196,6 +196,10 @@ SECTIONS {
         src/region_map.o(.text);
         src/image_processing_effects.o(.text);
         src/battle_ai_script_commands.o(.text);
+        src/battle_ai_engine.o(.text);
+        src/battle_ai_main.o(.text);
+        src/battle_ai_util.o(.text);
+        src/battle_ai_switch.o(.text);
         src/fldeff_rocksmash.o(.text);
         src/fldeff_dig.o(.text);
         src/fldeff_flash.o(.text);
@@ -505,6 +509,10 @@ SECTIONS {
         src/region_map.o(.rodata);
         src/image_processing_effects.o(.rodata);
         src/battle_ai_script_commands.o(.rodata);
+        src/battle_ai_engine.o(.rodata);
+        src/battle_ai_main.o(.rodata);
+        src/battle_ai_util.o(.rodata);
+        src/battle_ai_switch.o(.rodata);
         src/fldeff_flash.o(.rodata);
         src/field_specials.o(.rodata);
         src/battle_records.o(.rodata);

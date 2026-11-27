@@ -28,7 +28,8 @@
 
 #define SOUND_MOVES_END 0xFFFF
 
-static const u16 sSoundMovesTable[] =
+// Not static: the AI reads this table too (battle_ai_engine.c).
+const u16 sSoundMovesTable[] =
 {
     MOVE_GROWL, MOVE_ROAR, MOVE_SING, MOVE_SUPERSONIC, MOVE_SCREECH, MOVE_SNORE,
     MOVE_UPROAR, MOVE_METAL_SOUND, MOVE_GRASS_WHISTLE, MOVE_HYPER_VOICE, SOUND_MOVES_END

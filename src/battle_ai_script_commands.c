@@ -4,6 +4,8 @@
 #include "util.h"
 #include "item.h"
 #include "random.h"
+#include "battle_ai_engine.h"
+#include "battle_ai_main.h"
 #include "battle_ai_script_commands.h"
 #include "constants/abilities.h"
 #include "constants/battle_ai.h"
@@ -41,6 +43,65 @@ AI scripts.
 
 static EWRAM_DATA const u8 *sAIScriptPtr = NULL;
 extern u8 *gBattleAI_ScriptsTable[];
+
+static void SetAiFlagsAndLevel(u32 aiFlags);
+static u32 GetBattleAiFlags(void);
+
+// Vanilla AI scripts run at levels 1-3.
+static const u32 sAiLevelScripts[AI_LEVEL_SMART_SCORING] =
+{
+    [AI_LEVEL_NONE] = 0,
+    [1] = AI_SCRIPT_CHECK_BAD_MOVE,
+    [2] = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT,
+    [3] = AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY,
+};
+
+// Move scoring steps of the ported AI (battle_ai_main.c) at levels 4-10.
+#define AI_LOGIC_BASIC (AI_LOGIC_CHECK_BAD_MOVE | AI_LOGIC_TRY_TO_FAINT | AI_LOGIC_CHECK_VIABILITY | AI_LOGIC_HP_AWARE)
+#define AI_LOGIC_STRONG (AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO)
+static const u16 sAiLevelLogic[AI_LEVEL_MAX + 1] =
+{
+    [4]  = AI_LOGIC_BASIC,
+    [5]  = AI_LOGIC_STRONG,
+    [6]  = AI_LOGIC_STRONG,
+    [7]  = AI_LOGIC_STRONG | AI_LOGIC_PREDICT_SWITCH,
+    [8]  = AI_LOGIC_STRONG | AI_LOGIC_PREDICT_SWITCH,
+    [9]  = AI_LOGIC_STRONG | AI_LOGIC_PREDICT_SWITCH,
+    [10] = AI_LOGIC_STRONG | AI_LOGIC_PREDICT_SWITCH,
+};
+
+// Switching steps of the ported AI (battle_ai_switch.c). Levels 1-4 use the
+// vanilla switching.
+#define AI_SWITCH_SMART (AI_SWITCH_SMART_MON_CHOICES | AI_SWITCH_SMART_SWITCHING)
+static const u8 sAiLevelSwitching[AI_LEVEL_MAX + 1] =
+{
+    [5]  = AI_SWITCH_SMART_MON_CHOICES,
+    [6]  = AI_SWITCH_SMART,
+    [7]  = AI_SWITCH_SMART,
+    [8]  = AI_SWITCH_SMART | AI_SWITCH_ACE_POKEMON,
+    [9]  = AI_SWITCH_SMART | AI_SWITCH_ACE_POKEMON,
+    [10] = AI_SWITCH_SMART | AI_SWITCH_ACE_POKEMON,
+};
+
+// What the ported AI knows about the player and what it predicts (levels 4-10).
+// Levels 4-6 know only what they have seen in this battle.
+#define AI_PREDICT (AI_PREDICT_MOVE | AI_PREDICT_SWITCH)
+static const u8 sAiLevelKnowledge[AI_LEVEL_MAX + 1] =
+{
+    [7]  = AI_PREDICT,
+    [8]  = AI_PREDICT | AI_KNOW_ASSUME_STAB,
+    [9]  = AI_PREDICT | AI_KNOW_OMNISCIENT,
+    [10] = AI_PREDICT | AI_KNOW_OMNISCIENT | AI_PREDICT_INCOMING_MON,
+};
+
+// Extra AI_SCRIPT_* flags on a trainer at level 4+ turn on the matching step.
+static const u32 sScriptToLogic[][2] =
+{
+    {AI_SCRIPT_SETUP_FIRST_TURN,      AI_LOGIC_FORCE_SETUP_FIRST_TURN},
+    {AI_SCRIPT_RISKY,                 AI_LOGIC_RISKY},
+    {AI_SCRIPT_PREFER_STRONGEST_MOVE, AI_LOGIC_TRY_TO_2HKO},
+    {AI_SCRIPT_PREFER_BATON_PASS,     AI_LOGIC_PREFER_BATON_PASS},
+};
 
 static void Cmd_if_random_less_than(void);
 static void Cmd_if_random_greater_than(void);
@@ -299,6 +360,13 @@ void BattleAI_SetupAIData(void)
     for (i = 0; i < MAX_MON_MOVES; i++)
         AI_THINKING_STRUCT->score[i] = 100;
 
+    // The AI's view of the battle is rebuilt for every decision.
+    AI_ClearLogicData();
+#if AI_DEBUG_CHECKS
+    AI_SetLogicDataForTurn(gActiveBattler);
+    AI_ClearLogicData();
+#endif
+
     moveLimitations = CheckMoveLimitations(gActiveBattler, 0, 0xFF);
 
     // Ignore moves that aren't possible to use.
@@ -331,37 +399,136 @@ void BattleAI_SetupAIData(void)
         gBattlerTarget = BATTLE_OPPOSITE(gBattlerAttacker);
     }
 
-    // Choose proper trainer ai scripts.
+    SetAiFlagsAndLevel(GetBattleAiFlags());
+}
+
+// The AI flags for this battle: fixed ones for special battles, else the trainer's.
+static u32 GetBattleAiFlags(void)
+{
     // Fire Red, why all the returns?!?
     if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
-    {
-        AI_THINKING_STRUCT->aiFlags = AI_SCRIPT_SAFARI;
-        return;
-    }
+        return AI_SCRIPT_SAFARI;
     else if (gBattleTypeFlags & BATTLE_TYPE_ROAMER)
-    {
-        AI_THINKING_STRUCT->aiFlags = AI_SCRIPT_ROAMING;
-        return;
-    }
+        return AI_SCRIPT_ROAMING;
     else if (!(gBattleTypeFlags & (BATTLE_TYPE_TRAINER_TOWER | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_BATTLE_TOWER)) && (gTrainerBattleOpponent_A != TRAINER_SECRET_BASE))
     {
         if (gBattleTypeFlags & BATTLE_TYPE_WILD_SCRIPTED)
-        {
-            AI_THINKING_STRUCT->aiFlags = AI_SCRIPT_CHECK_BAD_MOVE;
-            return;
-        }
+            return AI_SCRIPT_CHECK_BAD_MOVE;
         else if (gBattleTypeFlags & BATTLE_TYPE_LEGENDARY_FRLG)
-        {
-            AI_THINKING_STRUCT->aiFlags = (AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY);
-            return;
-        }
+            return AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY;
     }
     else
     {
-        AI_THINKING_STRUCT->aiFlags = (AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY);
-        return;
+        return AI_SCRIPT_CHECK_BAD_MOVE | AI_SCRIPT_TRY_TO_FAINT | AI_SCRIPT_CHECK_VIABILITY;
     }
-    AI_THINKING_STRUCT->aiFlags = gTrainers[gTrainerBattleOpponent_A].aiFlags;
+    return gTrainers[gTrainerBattleOpponent_A].aiFlags;
+}
+
+// The AI level set up by the last call to BattleAI_SetupAIData.
+u8 BattleAI_GetAiLevel(void)
+{
+    return AI_THINKING_STRUCT->aiLevel;
+}
+
+// Level for AI flags that have no AI_LEVEL, so every battle has one. These
+// battles always use the vanilla scripts, so the level is at most 3.
+static u8 GetAiLevelFromScripts(u32 aiFlags)
+{
+    if (aiFlags & AI_SCRIPT_CHECK_VIABILITY)
+        return 3;
+    if (aiFlags & AI_SCRIPT_TRY_TO_FAINT)
+        return 2;
+    if (aiFlags & AI_SCRIPT_CHECK_BAD_MOVE)
+        return 1;
+    return AI_LEVEL_NONE;
+}
+
+// Splits a trainer's aiFlags into the vanilla scripts to run, the ported
+// AI's scoring and switching steps, and the level.
+static void GetAiFlagsAndLevel(u32 aiFlags, u32 *scriptFlags, u16 *logicFlags, u8 *switchFlags, u8 *knowledgeFlags, u8 *levelOut)
+{
+    u8 level = GET_AI_LEVEL(aiFlags);
+    s32 i;
+
+    *logicFlags = 0;
+    *switchFlags = 0;
+    *knowledgeFlags = 0;
+    aiFlags &= ~AI_LEVEL_MASK;
+    if (level == AI_LEVEL_NONE)
+    {
+        // No level given: run the scripts exactly as listed.
+        level = GetAiLevelFromScripts(aiFlags);
+    }
+    else
+    {
+        if (level > AI_LEVEL_MAX)
+            level = AI_LEVEL_MAX;
+
+        if (level < AI_LEVEL_SMART_SCORING)
+        {
+            aiFlags |= sAiLevelScripts[level];
+        }
+        else
+        {
+            // The ported AI scores the moves instead of the vanilla scripts.
+            *logicFlags = sAiLevelLogic[level];
+            for (i = 0; i < ARRAY_COUNT(sScriptToLogic); i++)
+            {
+                if (aiFlags & sScriptToLogic[i][0])
+                    *logicFlags |= sScriptToLogic[i][1];
+            }
+            // Like the expansion AI, double battles add the partner checks.
+            if (gBattleTypeFlags & BATTLE_TYPE_DOUBLE)
+                *logicFlags |= AI_LOGIC_DOUBLE_BATTLE;
+            aiFlags = 0;
+            *knowledgeFlags = sAiLevelKnowledge[level];
+        }
+        *switchFlags = sAiLevelSwitching[level];
+    }
+
+    *scriptFlags = aiFlags;
+    *levelOut = level;
+}
+
+static void SetAiFlagsAndLevel(u32 aiFlags)
+{
+    u32 scriptFlags;
+    u16 logicFlags;
+    u8 switchFlags, knowledgeFlags, level;
+
+    GetAiFlagsAndLevel(aiFlags, &scriptFlags, &logicFlags, &switchFlags, &knowledgeFlags, &level);
+    AI_THINKING_STRUCT->aiFlags = scriptFlags;
+    AI_THINKING_STRUCT->aiLogicFlags = logicFlags;
+    AI_THINKING_STRUCT->aiSwitchFlags = switchFlags;
+    AI_THINKING_STRUCT->aiLevel = level;
+}
+
+// The switching steps (AI_SWITCH_*) of the trainer in this battle. Changes
+// nothing, so it is safe to call while a battle script runs.
+u8 BattleAI_GetSwitchFlags(void)
+{
+    u32 scriptFlags;
+    u16 logicFlags;
+    u8 switchFlags, knowledgeFlags, level;
+
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        return 0;
+    GetAiFlagsAndLevel(GetBattleAiFlags(), &scriptFlags, &logicFlags, &switchFlags, &knowledgeFlags, &level);
+    return switchFlags;
+}
+
+// What the trainer in this battle knows and predicts (AI_KNOW_* and
+// AI_PREDICT_*). Changes nothing, so it is safe to call at any time.
+u8 BattleAI_GetKnowledgeFlags(void)
+{
+    u32 scriptFlags;
+    u16 logicFlags;
+    u8 switchFlags, knowledgeFlags, level;
+
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        return 0;
+    GetAiFlagsAndLevel(GetBattleAiFlags(), &scriptFlags, &logicFlags, &switchFlags, &knowledgeFlags, &level);
+    return knowledgeFlags;
 }
 
 u8 BattleAI_ChooseMoveOrAction(void)
@@ -372,6 +539,9 @@ u8 BattleAI_ChooseMoveOrAction(void)
     s32 i;
 
     RecordLastUsedMoveByTarget();
+    if (AI_THINKING_STRUCT->aiLogicFlags != 0)
+        return BattleAI_ChooseMoveIndexWithLogic();
+
     while (AI_THINKING_STRUCT->aiFlags != 0)
     {
         if (AI_THINKING_STRUCT->aiFlags & 1)
@@ -503,6 +673,7 @@ static void ClearBattlerMoveHistory(u8 battlerId)
 
 void RecordAbilityBattle(u8 battlerId, u8 abilityId)
 {
+    AI_RecordAbility(battlerId, abilityId);
 #ifndef BUGFIX // Only records one ability for the whole side
     if (GetBattlerSide(battlerId) == 0)
         BATTLE_HISTORY->abilities[GET_BATTLER_SIDE(battlerId)] = abilityId;
@@ -513,6 +684,7 @@ void RecordAbilityBattle(u8 battlerId, u8 abilityId)
 
 void RecordItemEffectBattle(u8 battlerId, u8 itemEffect)
 {
+    AI_RecordItem(battlerId);
 #ifndef BUGFIX // Only records one item for the whole side
     if (GetBattlerSide(battlerId) == 0)
         BATTLE_HISTORY->itemEffects[GET_BATTLER_SIDE(battlerId)] = itemEffect;

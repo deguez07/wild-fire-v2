@@ -2,6 +2,7 @@
 #include "gflib.h"
 #include "battle.h"
 #include "battle_anim.h"
+#include "battle_ai_engine.h"
 #include "battle_ai_script_commands.h"
 #include "battle_controllers.h"
 #include "battle_interface.h"
@@ -3633,6 +3634,9 @@ static void SetActionsAndBattlersTurnOrder(void)
                             SwapTurnOrder(i, j);
                 }
             }
+#if AI_DEBUG_CHECKS
+            AI_DebugCheckTurnOrder();
+#endif
         }
     }
     gBattleMainFunc = CheckFocusPunch_ClearVarsBeforeTurnStarts;

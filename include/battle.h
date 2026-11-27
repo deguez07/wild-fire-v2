@@ -276,7 +276,10 @@ struct AI_ThinkingStruct
     u32 aiFlags;
     u8 aiAction;
     u8 aiLogicId;
-    u8 filler12[6];
+    u16 aiLogicFlags; // AI_LOGIC_* steps of the ported AI; 0 when the vanilla scripts decide
+    u8 aiLevel; // AI_LEVEL_NONE, or AI_LEVEL_MIN to AI_LEVEL_MAX
+    u8 aiSwitchFlags; // AI_SWITCH_* steps of the ported AI; 0 when the vanilla switching decides
+    u8 filler16[2];
     u8 simulatedRNG[4];
 };
 
@@ -329,6 +332,8 @@ struct StatsArray
     u16 stats[NUM_STATS];
 };
 
+struct AiLogicData;
+
 struct BattleResources
 {
     struct SecretBaseRecord *secretBase;
@@ -339,6 +344,7 @@ struct BattleResources
     struct AI_ThinkingStruct *ai;
     struct BattleHistory *battleHistory;
     struct BattleScriptsStack *AI_ScriptsStack;
+    struct AiLogicData *aiLogicData; // see battle_ai_engine.h
 };
 
 extern struct BattleResources *gBattleResources;

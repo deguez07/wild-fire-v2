@@ -1,5 +1,7 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_ai_script_commands.h"
+#include "battle_ai_switch.h"
 #include "battle_anim.h"
 #include "battle_controllers.h"
 #include "random.h"
@@ -361,7 +363,13 @@ void AI_TrySwitchOrUseItem(void)
 
     if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
     {
-        if (ShouldSwitch())
+        // Trainers at AI level 5+ use the switching ported from pokefirered-expansion.
+        if (BattleAI_GetSwitchFlags() != 0)
+        {
+            if (AI_TrySwitchWithLogic(gActiveBattler))
+                return;
+        }
+        else if (ShouldSwitch())
         {
             if (*(gBattleStruct->AI_monToSwitchIntoId + (GetBattlerPosition(gActiveBattler) >> 1)) == 6)
             {
