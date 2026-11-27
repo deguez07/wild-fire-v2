@@ -78,11 +78,22 @@
 #define AI_LOGIC_TRY_TO_2HKO            (1 << 5)  // bonus for moves that KO in one or two hits
 #define AI_LOGIC_PREFER_BATON_PASS      (1 << 6)  // set up stats, then Baton Pass
 #define AI_LOGIC_HP_AWARE               (1 << 7)  // choose effects by its own and the target's HP
+#define AI_LOGIC_PREDICT_SWITCH         (1 << 8)  // when it expects the player to switch, prefer moves that punish it
 
 // Switching steps of the ported AI (src/battle_ai_switch.c), picked by level.
 // Levels 1-4 use the vanilla switching.
 #define AI_SWITCH_SMART_MON_CHOICES (1 << 0) // level 5+: send in the mon that wins the matchup
 #define AI_SWITCH_SMART_SWITCHING   (1 << 1) // level 6+: switch out of bad matchups and bad situations
 #define AI_SWITCH_ACE_POKEMON       (1 << 2) // level 8+: the last mon in the party comes out last
+
+// What the ported AI knows about the player's side and what it predicts,
+// picked by level (src/battle_ai_engine.c). Without AI_KNOW_OMNISCIENT it only
+// knows the moves the player's mons have used, the abilities and items the
+// battle has revealed, and the party mons it has seen.
+#define AI_KNOW_ASSUME_STAB     (1 << 0) // level 8: expects a typical attack of each type on moves it hasn't seen
+#define AI_KNOW_OMNISCIENT      (1 << 1) // level 9+: knows the player's moves, items, abilities and party
+#define AI_PREDICT_MOVE         (1 << 2) // level 7+: predicts the player's move from what it knows
+#define AI_PREDICT_SWITCH       (1 << 3) // level 7+: predicts when the player will switch
+#define AI_PREDICT_INCOMING_MON (1 << 4) // level 10: scores its moves against the mon it expects to come in
 
 #endif // GUARD_CONSTANTS_BATTLE_AI_H

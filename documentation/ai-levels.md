@@ -19,18 +19,18 @@ scored by the AI logic ported from pokefirered-expansion (Gen 1-3 moves and
 Gen 3 rules only), which is built on exact damage, speed and accuracy
 estimates for every move.
 
-| Level | Now (stage 4) | Planned |
+| Level | Moves and switching | What it knows about your side |
 |---|---|---|
-| 1 | Avoids moves that would fail (vanilla route trainers) | Same |
+| 1 | Avoids moves that would fail (vanilla route trainers) | Vanilla: the moves your mon used, one revealed ability and item |
 | 2 | + goes for KOs | Same |
 | 3 | + scores moves by usefulness (vanilla leaders) | Same |
-| 4 | Ported move scoring: avoids useless moves, goes for KOs, picks the best damaging move, scores status and setup moves by the situation, considers its own and your HP | Same |
-| 5 | + bonus for moves that KO in one or two hits; sends in the mon that wins the matchup (after a KO, or when it switches) | Same |
-| 6 | + smart switching: leaves bad matchups, Perish Song, Yawn, bad status, Encore and stat drops; switches to absorbers and trappers | Same |
-| 7 | Same as 6 | + predicts your moves and switches |
-| 8 | + keeps its ace (last mon in the party) for last | + guesses your likely moves |
-| 9 | Same as 8 | + knows your moves, items and abilities |
-| 10 | Same as 8 | Everything, no deliberate mistakes |
+| 4 | Ported move scoring: avoids useless moves, goes for KOs, picks the best damaging move, scores status and setup moves by the situation, considers its own and your HP | Only what the battle has shown: moves each of your mons used, abilities and items that were revealed |
+| 5 | + bonus for moves that KO in one or two hits; sends in the mon that wins the matchup (after a KO, or when it switches) | Same as 4 |
+| 6 | + smart switching: leaves bad matchups, Perish Song, Yawn, bad status, Encore and stat drops; switches to absorbers and trappers | Same as 4 |
+| 7 | + predicts your move and whether you switch, and plays around it | Same as 4 |
+| 8 | + keeps its ace (last mon in the party) for last | + expects a typical attack of each of your mon's types |
+| 9 | Same as 8 | Knows your moves, items, abilities and party |
+| 10 | + when it expects you to switch, picks its move against the mon it expects to come in | Same as 9 |
 
 Levels 1-4 switch like vanilla FireRed. Level 5 uses the expansion AI's basic
 switching checks (Wonder Guard, Perish Song, Natural Cure, resisting the last
@@ -42,9 +42,37 @@ From level 4 on, extra flags turn on more of the ported AI:
 risky high-damage moves, assumes high rolls), `AI_SCRIPT_PREFER_STRONGEST_MOVE`
 (the 2-hit KO bonus) and `AI_SCRIPT_PREFER_BATON_PASS` (sets up, then passes).
 
-Until stage 5, the level 4+ AI sees your moves, held item and ability. Stage 5
-limits that to levels 9-10. No level reads the move or switch you picked that
-turn: the AI only uses the move you used last turn.
+### What the AI knows (levels 4-8)
+
+- **Moves:** only the moves each of your mons has used in this battle. It
+  remembers them after you switch out.
+- **Abilities:** the ability once the battle shows it (Intimidate, Levitate
+  blocking a move, Volt Absorb and so on). Until then, if the species has two
+  abilities it guesses one, again each turn. A species with one ability, and
+  Shadow Tag, Arena Trap and Magnet Pull (you notice being trapped), count as
+  known.
+- **Items:** an item once the battle records it (Leftovers healing, Focus
+  Band holding on). Until then it assumes no item. A berry is gone once it
+  shows, so there is nothing to remember. It also can't see your PP.
+- **Party:** only the mons that have been on the field. It knows how many
+  mons you have left, like the party balls show.
+- **Level 8** also expects a typical attack of each of your mon's types that it
+  hasn't seen yet (60-80 power, e.g. Fire Punch for a Fire type). This is a
+  guess from the species, not your real moves.
+
+### Prediction (levels 7+)
+
+Each turn the AI plays your side once with its own scoring, using only what
+it knows about you, to guess the move you'll pick. That move decides who it
+thinks moves first, whether to Protect, and which mon would absorb your attack.
+In single battles it also runs its own switching checks from your side. When
+those say you should switch, it acts on the prediction half the time:
+Pursuit, Spikes, screens and weather become better, and Protect, Counter,
+Encore, Taunt and trapping moves become worse. At level 10 it picks its move
+against the mon it expects you to send in.
+
+No level ever reads the move or switch you picked that turn. A prediction is
+the AI's own guess, made from what it has seen before you choose.
 
 ## How the starting levels were chosen
 

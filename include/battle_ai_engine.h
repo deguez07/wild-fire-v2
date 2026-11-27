@@ -13,9 +13,11 @@
 // Nothing here changes the battle. Every function only reads battle state,
 // and the damage simulation restores every global it touches.
 //
-// Fairness: these functions see the AI's view of each battler (its ability
-// and held item, see AI_GetBattlerAbility / AI_GetBattlerItem), never the
-// move or switch the player has selected this turn.
+// Fairness: these functions see the AI's view of each battler (its moves,
+// ability and held item, see AI_GetMovesArray / AI_GetBattlerAbility /
+// AI_GetBattlerItem), never the move or switch the player has selected this
+// turn. Below level 9 the AI's view of the player's side holds only what the
+// battle has shown (struct AiPartyKnowledge).
 
 #include "global.h"
 #include "battle.h"
@@ -68,6 +70,17 @@ typedef u16 uq4_12_t;
 // moves with 100% accuracy when the AI compares them.
 #define AI_ACCURACY_SURE_HIT 101
 
+// What the AI has seen of one of the player's party mons in this battle.
+struct AiPartyKnowledge
+{
+    u16 moves[MAX_MON_MOVES]; // moves it has used, in their move slot; MOVE_NONE if not seen
+    u16 item;                 // held item the battle revealed, ITEM_NONE if not seen
+    u8 ability;               // ability the battle revealed, ABILITY_NONE if not seen
+    u8 guessedAbility;        // the AI's guess while the ability isn't known
+    u8 guessTurn;             // turn of that guess, plus 1 (0: no guess yet)
+    bool8 seen;               // it has been on the field
+};
+
 struct SimulatedDamage
 {
     u16 minimum;
@@ -95,6 +108,22 @@ struct AiLogicData
     u8 mostSuitableMonId[MAX_BATTLERS_COUNT]; // best switch-in found by the switching AI, PARTY_SIZE if none
     bool8 shouldConsiderExplosion;        // rolled once per decision, more likely at low HP
     bool8 ready; // TRUE once AI_SetLogicDataForTurn has run for this decision
+    u8 knowledgeFlags;                    // AI_KNOW_* and AI_PREDICT_* of the trainer
+    u16 knownMoves[MAX_BATTLERS_COUNT][MAX_MON_MOVES]; // AI_GetMovesArray of battlers the AI doesn't fully know
+
+    // Predictions about the player's side, made once per turn (AI_SetupPredictions).
+    u16 predictedMove[MAX_BATTLERS_COUNT];   // the move the AI expects, MOVE_NONE if it can't tell
+    u8 predictedSwitchin[MAX_BATTLERS_COUNT]; // the mon the AI expects to come in, PARTY_SIZE if none
+    u8 predictedSwitches;                  // bit per battler the AI expects to switch out
+    bool8 predictSwitchRoll;               // this turn's roll to act on predicted switches
+    bool8 predictingMove;                  // the AI acts on predictedMove this turn
+    bool8 predictingSwitch;                // the AI acts on predictedSwitches this turn
+    bool8 predictionInProgress;            // TRUE while the AI plays the player's side
+    u8 predictionTurn;                     // turn of the predictions, plus 1 (0: none)
+    u8 predictionBattler;                  // AI battler the predictions were made for
+
+    // Kept for the whole battle; never restored by the simulations above.
+    struct AiPartyKnowledge playerParty[PARTY_SIZE];
 };
 
 #define AI_LOGIC_DATA (gBattleResources->aiLogicData)
@@ -134,9 +163,19 @@ bool32 AI_IsAbilityOnField(u8 ability);
 // Weather that currently has an effect (0 under Cloud Nine / Air Lock).
 u16 AI_GetWeather(void);
 
-// The moves the AI considers a battler to have. For now every battler's real
-// moves; stage 5 limits what the AI knows about the player's moves by level.
+// The moves the AI considers a battler to have. The AI's own side and level 9+
+// trainers see the real moves; otherwise the moves the battler has used, plus
+// typical attacks of its types at level 8 (MOVE_NONE where it knows nothing).
 u16 *AI_GetMovesArray(u8 battler);
+
+// What the AI knows about the player's side
+bool32 AI_KnowsBattler(u8 battler);                         // AI's own side, or a level 9+ trainer
+bool32 AI_CanSeePartyMon(u8 battler, u8 partyIndex);        // known, or has been on the field
+u16 AI_GetPartyMonMove(u8 battler, u8 partyIndex, u8 slot); // MOVE_NONE if the AI hasn't seen it
+u8 AI_GetPartyMonAbility(u8 battler, u8 partyIndex);
+bool32 AI_MoveSlotHasPP(u8 battler, u8 slot);               // always TRUE for moves whose PP the AI can't see
+void AI_RecordAbility(u8 battler, u8 ability);              // the battle showed the ability
+void AI_RecordItem(u8 battler);                             // the battle showed the held item
 
 // Damage
 struct SimulatedDamage AI_CalcDamage(u16 move, u8 battlerAtk, u8 battlerDef, uq4_12_t *effectiveness, bool32 isCrit);
@@ -157,6 +196,13 @@ bool32 AI_IsSlower(u8 battlerAi, u8 battler, u16 aiMove, u16 otherMove, bool32 c
 // Per-decision cache
 void AI_SetLogicDataForTurn(u8 battlerAi);
 void AI_ClearLogicData(void);
+
+// Saves the battlers' data, the AI's view and the AI's thinking, puts the
+// battler's moves, item and ability as the AI sees them in gBattleMons (so the
+// AI can think as that battler) and restores everything at the end. The
+// knowledge in playerParty is kept.
+void *AI_BeginPlayAsBattler(u8 battler);
+void AI_EndPlayAsBattler(void *backup);
 
 // Switch-in simulation. Begin saves the battler's data, SetSwitchinCandidate
 // puts a party mon in its place (and updates the cache), End restores

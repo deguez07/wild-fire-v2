@@ -1,6 +1,7 @@
 #include "global.h"
 #include "battle.h"
 #include "battle_ai_engine.h"
+#include "battle_ai_script_commands.h"
 #include "battle_anim.h"
 #include "battle_interface.h"
 #include "battle_main.h"
@@ -10,6 +11,7 @@
 #include "malloc.h"
 #include "pokedex.h"
 #include "pokemon.h"
+#include "random.h"
 #include "util.h"
 #include "constants/abilities.h"
 #include "constants/battle_ai.h"
@@ -309,9 +311,254 @@ bool32 AI_BattlerHasType(u8 battler, u8 type)
     return IS_BATTLER_OF_TYPE(battler, type);
 }
 
+// ---------------------------------------------------------------------------
+// What the AI knows about the player's side
+// ---------------------------------------------------------------------------
+
+// The attack a level 8 trainer expects of each type on a move it hasn't seen:
+// a common move of 60-80 power. Only used to estimate damage and to predict.
+static const u16 sAssumedStabMoves[NUMBER_OF_MON_TYPES] =
+{
+    [TYPE_NORMAL]   = MOVE_STRENGTH,
+    [TYPE_FIGHTING] = MOVE_BRICK_BREAK,
+    [TYPE_FLYING]   = MOVE_DRILL_PECK,
+    [TYPE_POISON]   = MOVE_SLUDGE,
+    [TYPE_GROUND]   = MOVE_BONE_CLUB,
+    [TYPE_ROCK]     = MOVE_ROCK_SLIDE,
+    [TYPE_BUG]      = MOVE_SIGNAL_BEAM,
+    [TYPE_GHOST]    = MOVE_SHADOW_BALL,
+    [TYPE_STEEL]    = MOVE_STEEL_WING,
+    [TYPE_FIRE]     = MOVE_FIRE_PUNCH,
+    [TYPE_WATER]    = MOVE_WATERFALL,
+    [TYPE_GRASS]    = MOVE_GIGA_DRAIN,
+    [TYPE_ELECTRIC] = MOVE_THUNDER_PUNCH,
+    [TYPE_PSYCHIC]  = MOVE_PSYBEAM,
+    [TYPE_ICE]      = MOVE_ICE_PUNCH,
+    [TYPE_DRAGON]   = MOVE_DRAGON_CLAW,
+    [TYPE_DARK]     = MOVE_BITE,
+};
+
+// The AI knows everything about its own side. A level 9+ trainer also knows
+// the player's side; others only what the battle has shown.
+bool32 AI_KnowsBattler(u8 battler)
+{
+    if (GetBattlerSide(battler) != B_SIDE_PLAYER)
+        return TRUE;
+    return AI_LOGIC_DATA != NULL && (AI_LOGIC_DATA->knowledgeFlags & AI_KNOW_OMNISCIENT);
+}
+
+static struct AiPartyKnowledge *GetPartyKnowledge(u8 battler, u8 partyIndex)
+{
+    if (AI_LOGIC_DATA == NULL || GetBattlerSide(battler) != B_SIDE_PLAYER || partyIndex >= PARTY_SIZE)
+        return NULL;
+    return &AI_LOGIC_DATA->playerParty[partyIndex];
+}
+
+static struct AiPartyKnowledge *GetBattlerKnowledge(u8 battler)
+{
+    return GetPartyKnowledge(battler, gBattlerPartyIndexes[battler]);
+}
+
+void AI_RecordAbility(u8 battler, u8 ability)
+{
+    struct AiPartyKnowledge *mon = GetBattlerKnowledge(battler);
+
+    if (mon != NULL && ability != ABILITY_NONE)
+        mon->ability = ability;
+}
+
+void AI_RecordItem(u8 battler)
+{
+    struct AiPartyKnowledge *mon = GetBattlerKnowledge(battler);
+
+    if (mon != NULL)
+        mon->item = gBattleMons[battler].item;
+}
+
+// At every decision: the player's mons on the field have been seen, and so
+// has the move each used last (gLastMoves only holds moves of earlier turns).
+static void RecordWhatTheAiSees(void)
+{
+    struct AiPartyKnowledge *mon;
+    u16 move;
+    u8 battler, i;
+
+    for (battler = 0; battler < gBattlersCount; battler++)
+    {
+        mon = GetBattlerKnowledge(battler);
+        if (mon == NULL || gBattleMons[battler].species == SPECIES_NONE || (gAbsentBattlerFlags & gBitTable[battler]))
+            continue;
+        mon->seen = TRUE;
+        move = gLastMoves[battler];
+        if (move == MOVE_NONE || move == MOVE_UNAVAILABLE)
+            continue;
+        for (i = 0; i < MAX_MON_MOVES; i++)
+        {
+            if (gBattleMons[battler].moves[i] == move)
+            {
+                mon->moves[i] = move;
+                break;
+            }
+        }
+    }
+}
+
+// The guess for an ability the battle hasn't shown: one of the species'
+// abilities, picked again every turn.
+static u8 GuessAbility(struct AiPartyKnowledge *mon, u16 species, u8 ability)
+{
+    u8 ability0 = gSpeciesInfo[species].abilities[0];
+    u8 ability1 = gSpeciesInfo[species].abilities[1];
+    u8 turn = gBattleResults.battleTurnCounter + 1;
+
+    if (mon->ability != ABILITY_NONE)
+        return ability;
+    // Only one ability possible, or it changed in plain sight (Trace, Skill Swap, Role Play).
+    if (ability1 == ABILITY_NONE || ability1 == ability0 || (ability != ability0 && ability != ability1))
+        return ability;
+    // Like the expansion AI: the player notices when it can't switch out.
+    if (ability == ABILITY_SHADOW_TAG || ability == ABILITY_MAGNET_PULL || ability == ABILITY_ARENA_TRAP)
+        return ability;
+    if (mon->guessTurn != turn)
+    {
+        mon->guessedAbility = (Random() & 1) ? ability1 : ability0;
+        mon->guessTurn = turn;
+    }
+    return mon->guessedAbility;
+}
+
+static u8 GetKnownAbility(u8 battler)
+{
+    struct AiPartyKnowledge *mon = GetBattlerKnowledge(battler);
+
+    if (AI_KnowsBattler(battler) || mon == NULL)
+        return gBattleMons[battler].ability;
+    return GuessAbility(mon, gBattleMons[battler].species, gBattleMons[battler].ability);
+}
+
+static u16 GetKnownItem(u8 battler)
+{
+    struct AiPartyKnowledge *mon = GetBattlerKnowledge(battler);
+
+    if (AI_KnowsBattler(battler) || mon == NULL)
+        return gBattleMons[battler].item;
+    if (mon->item != ITEM_NONE && mon->item == gBattleMons[battler].item)
+        return mon->item;
+    return ITEM_NONE;
+}
+
+// The moves the AI believes a battler it doesn't fully know has.
+static void SetKnownMoves(u8 battler)
+{
+    struct AiPartyKnowledge *mon = GetBattlerKnowledge(battler);
+    u16 *known = AI_LOGIC_DATA->knownMoves[battler];
+    u16 assumed;
+    u8 types[2], i, j;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        known[i] = MOVE_NONE;
+        if (mon != NULL && mon->moves[i] != MOVE_NONE && mon->moves[i] == gBattleMons[battler].moves[i])
+            known[i] = mon->moves[i];
+    }
+
+    if (!(AI_LOGIC_DATA->knowledgeFlags & AI_KNOW_ASSUME_STAB))
+        return;
+
+    // Expect an attack of each of its types it hasn't shown one of.
+    types[0] = gBattleMons[battler].type1;
+    types[1] = gBattleMons[battler].type2;
+    for (j = 0; j < 2; j++)
+    {
+        if ((j == 1 && types[1] == types[0]) || types[j] >= NUMBER_OF_MON_TYPES)
+            continue;
+        assumed = sAssumedStabMoves[types[j]];
+        if (assumed == MOVE_NONE)
+            continue;
+        for (i = 0; i < MAX_MON_MOVES; i++)
+        {
+            if (known[i] != MOVE_NONE && gBattleMoves[known[i]].power != 0 && gBattleMoves[known[i]].type == types[j])
+                break;
+        }
+        if (i < MAX_MON_MOVES)
+            continue;
+        for (i = 0; i < MAX_MON_MOVES; i++)
+        {
+            if (known[i] == MOVE_NONE)
+            {
+                known[i] = assumed;
+                break;
+            }
+        }
+    }
+}
+
 u16 *AI_GetMovesArray(u8 battler)
 {
+    if (AI_LOGIC_DATA != NULL && !AI_KnowsBattler(battler))
+        return AI_LOGIC_DATA->knownMoves[battler];
     return gBattleMons[battler].moves;
+}
+
+bool32 AI_CanSeePartyMon(u8 battler, u8 partyIndex)
+{
+    struct AiPartyKnowledge *mon = GetPartyKnowledge(battler, partyIndex);
+
+    return AI_KnowsBattler(battler) || mon == NULL || mon->seen;
+}
+
+u16 AI_GetPartyMonMove(u8 battler, u8 partyIndex, u8 slot)
+{
+    struct Pokemon *party = (GetBattlerSide(battler) == B_SIDE_PLAYER) ? gPlayerParty : gEnemyParty;
+    struct AiPartyKnowledge *mon = GetPartyKnowledge(battler, partyIndex);
+    u16 move = GetMonData(&party[partyIndex], MON_DATA_MOVE1 + slot);
+
+    if (AI_KnowsBattler(battler) || mon == NULL || mon->moves[slot] == move)
+        return move;
+    return MOVE_NONE;
+}
+
+u8 AI_GetPartyMonAbility(u8 battler, u8 partyIndex)
+{
+    struct Pokemon *party = (GetBattlerSide(battler) == B_SIDE_PLAYER) ? gPlayerParty : gEnemyParty;
+    struct AiPartyKnowledge *mon = GetPartyKnowledge(battler, partyIndex);
+    u8 ability = GetMonAbility(&party[partyIndex]);
+
+    if (AI_KnowsBattler(battler) || mon == NULL)
+        return ability;
+    return GuessAbility(mon, GetMonData(&party[partyIndex], MON_DATA_SPECIES), ability);
+}
+
+bool32 AI_MoveSlotHasPP(u8 battler, u8 slot)
+{
+    if (AI_KnowsBattler(battler))
+        return gBattleMons[battler].pp[slot] != 0;
+    return TRUE;
+}
+
+// Disable, Torment, Taunt, Imprison, Encore and a known Choice Band, for the
+// moves the AI believes the battler has. The AI can't see PP or hidden items.
+static u8 GetVisibleMoveLimitations(u8 battler)
+{
+    u16 *moves = AI_LOGIC_DATA->knownMoves[battler];
+    u16 choicedMove = gBattleStruct->choicedMove[battler];
+    u8 limitations = 0;
+    u8 i;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (moves[i] == MOVE_NONE)
+            continue;
+        if (moves[i] == gDisableStructs[battler].disabledMove
+         || (moves[i] == gLastMoves[battler] && (gBattleMons[battler].status2 & STATUS2_TORMENT))
+         || (gDisableStructs[battler].tauntTimer && gBattleMoves[moves[i]].power == 0)
+         || GetImprisonedMovesCount(battler, moves[i])
+         || (gDisableStructs[battler].encoreTimer && gDisableStructs[battler].encoredMove != moves[i])
+         || (AI_LOGIC_DATA->holdEffects[battler] == HOLD_EFFECT_CHOICE_BAND
+          && choicedMove != MOVE_NONE && choicedMove != MOVE_UNAVAILABLE && choicedMove != moves[i]))
+            limitations |= gBitTable[i];
+    }
+    return limitations;
 }
 
 u16 AI_GetWeather(void)
@@ -1079,14 +1326,13 @@ static void SetBattlerLogicData(u8 battler)
 {
     struct AiLogicData *data = AI_LOGIC_DATA;
 
-    // For now the AI sees every battler's real ability and item. Limiting
-    // what it knows about the player's side by AI level comes in stage 5.
-    data->abilities[battler] = gBattleMons[battler].ability;
-    data->items[battler] = gBattleMons[battler].item;
+    data->abilities[battler] = GetKnownAbility(battler);
+    data->items[battler] = GetKnownItem(battler);
     data->holdEffects[battler] = GetHoldEffectOfItem(battler, data->items[battler]);
     data->holdEffectParams[battler] = GetHoldEffectParamOfItem(battler, data->items[battler]);
     // gLastMoves only holds moves from earlier turns while the AI decides.
     data->lastUsedMove[battler] = (gLastMoves[battler] == MOVE_UNAVAILABLE) ? MOVE_NONE : gLastMoves[battler];
+    SetKnownMoves(battler);
 }
 
 static void SetBattlerStateData(u8 battler)
@@ -1096,7 +1342,10 @@ static void SetBattlerStateData(u8 battler)
     if (IsBattlerAlive(battler))
     {
         data->hpPercents[battler] = gBattleMons[battler].hp * 100 / gBattleMons[battler].maxHP;
-        data->moveLimitations[battler] = CheckMoveLimitations(battler, 0, 0xFF);
+        if (AI_KnowsBattler(battler))
+            data->moveLimitations[battler] = CheckMoveLimitations(battler, 0, 0xFF);
+        else
+            data->moveLimitations[battler] = GetVisibleMoveLimitations(battler);
         data->speedStats[battler] = AI_GetBattlerSpeed(battler);
     }
     else
@@ -1147,6 +1396,10 @@ void AI_SetLogicDataForTurn(u8 battlerAi)
         return;
 
     AI_LOGIC_DATA->ready = FALSE;
+    AI_LOGIC_DATA->knowledgeFlags = BattleAI_GetKnowledgeFlags();
+    AI_LOGIC_DATA->predictingMove = FALSE;   // AI_SetupPredictions turns them on
+    AI_LOGIC_DATA->predictingSwitch = FALSE;
+    RecordWhatTheAiSees();
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
         SetBattlerLogicData(i);
     AI_LOGIC_DATA->ready = TRUE;
@@ -1165,6 +1418,16 @@ void AI_SetLogicDataForTurn(u8 battlerAi)
 // Switch-in candidates: put a party mon in a battler's place to see how it
 // would do. Everything is restored afterwards.
 // ---------------------------------------------------------------------------
+
+// Puts back a saved AI view, keeping what the AI has learned since.
+static void RestoreLogicData(const struct AiLogicData *saved)
+{
+    struct AiPartyKnowledge playerParty[PARTY_SIZE];
+
+    memcpy(playerParty, AI_LOGIC_DATA->playerParty, sizeof(playerParty));
+    *AI_LOGIC_DATA = *saved;
+    memcpy(AI_LOGIC_DATA->playerParty, playerParty, sizeof(playerParty));
+}
 
 struct AiSwitchinBackup
 {
@@ -1267,13 +1530,66 @@ void AI_EndSwitchinSimulation(u8 battler, void *backupPtr)
 
     if (backup == NULL)
         return;
-    *AI_LOGIC_DATA = backup->logicData;
+    RestoreLogicData(&backup->logicData);
     gBattleMons[battler] = backup->battleMon;
     gDisableStructs[battler] = backup->disableStruct;
     gStatuses3[battler] = backup->statuses3;
     gBattleStruct->choicedMove[battler] = backup->choicedMove;
     gBattlerPartyIndexes[battler] = backup->partyIndex;
     gAbsentBattlerFlags = backup->absentBattlerFlags;
+    Free(backup);
+}
+
+// ---------------------------------------------------------------------------
+// Thinking as another battler, to predict what the player will do. The
+// battler gets the moves, item and ability the AI believes it has, so the
+// prediction can't use anything the AI doesn't know.
+// ---------------------------------------------------------------------------
+
+struct AiPlayAsBackup
+{
+    struct AiLogicData logicData;
+    struct AI_ThinkingStruct thinking;
+    struct BattlePokemon battleMon;
+    u8 battler;
+};
+
+void *AI_BeginPlayAsBattler(u8 battler)
+{
+    struct AiPlayAsBackup *backup = Alloc(sizeof(struct AiPlayAsBackup));
+    u16 *moves;
+    u8 i;
+
+    if (backup == NULL)
+        return NULL;
+    backup->logicData = *AI_LOGIC_DATA;
+    backup->thinking = *gBattleResources->ai;
+    backup->battleMon = gBattleMons[battler];
+    backup->battler = battler;
+
+    if (!AI_KnowsBattler(battler))
+    {
+        moves = AI_LOGIC_DATA->knownMoves[battler];
+        for (i = 0; i < MAX_MON_MOVES; i++)
+        {
+            gBattleMons[battler].moves[i] = moves[i];
+            gBattleMons[battler].pp[i] = (moves[i] != MOVE_NONE) ? 1 : 0; // PP the AI can't see
+        }
+        gBattleMons[battler].item = AI_LOGIC_DATA->items[battler];
+        gBattleMons[battler].ability = AI_LOGIC_DATA->abilities[battler];
+    }
+    return backup;
+}
+
+void AI_EndPlayAsBattler(void *backupPtr)
+{
+    struct AiPlayAsBackup *backup = backupPtr;
+
+    if (backup == NULL)
+        return;
+    RestoreLogicData(&backup->logicData);
+    *gBattleResources->ai = backup->thinking;
+    gBattleMons[backup->battler] = backup->battleMon;
     Free(backup);
 }
 
@@ -1356,6 +1672,14 @@ void AI_DebugCheckTurnOrder(void)
     u8 b1, b2;
     u16 move1, move2;
     s32 predicted;
+
+    // The moves chosen this turn, to check the AI's predictions and knowledge.
+    for (i = 0; i < gBattlersCount; i++)
+    {
+        if (gChosenActionByBattler[i] == B_ACTION_USE_MOVE && IsBattlerAlive(i))
+            DebugPrintfLevel(MGBA_LOG_INFO, "AIMOVEUSED turn=%d battler=%d species=%d move=%d", gBattleResults.battleTurnCounter,
+                i, gBattleMons[i].species, gBattleMons[i].moves[gBattleStruct->chosenMovePositions[i]]);
+    }
 
     for (i = 0; i < gBattlersCount; i++)
     {

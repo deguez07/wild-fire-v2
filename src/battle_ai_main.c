@@ -2,6 +2,7 @@
 #include "battle.h"
 #include "battle_ai_engine.h"
 #include "battle_ai_main.h"
+#include "battle_ai_switch.h"
 #include "battle_ai_util.h"
 #include "battle_anim.h"
 #include "battle_util.h"
@@ -26,9 +27,10 @@
 // the scores, and the highest score wins (ties are broken at random). Moves
 // the AI can't use score 0.
 //
-// The AI doesn't predict the player yet (stage 5): where the expansion AI uses
-// a predicted move it uses the last move the target used, like the expansion
-// AI does without its prediction flags.
+// From level 7 the AI predicts the player's move and switches by scoring the
+// player's side as if it were the AI, using only what it knows about it
+// (AI_SetupPredictions). Without a prediction it expects the move the target
+// used last, like the expansion AI without its prediction flags.
 
 #define AI_DATA (AI_LOGIC_DATA)
 
@@ -71,6 +73,7 @@ static s32 AI_Risky(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
 static s32 AI_TryTo2HKO(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
 static s32 AI_PreferBatonPass(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
 static s32 AI_HPAware(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
+static s32 AI_PredictSwitch(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
 static void AI_CompareDamagingMoves(u8 battlerAtk, u8 battlerDef);
 
 // Indexed by the bit number of AI_LOGIC_*.
@@ -84,13 +87,8 @@ static const AiScoreFunc sBattleAiFuncTable[] =
     AI_TryTo2HKO,           // AI_LOGIC_TRY_TO_2HKO
     AI_PreferBatonPass,     // AI_LOGIC_PREFER_BATON_PASS
     AI_HPAware,             // AI_LOGIC_HP_AWARE
+    AI_PredictSwitch,       // AI_LOGIC_PREDICT_SWITCH
 };
-
-// The move the AI expects from the target: for now the last move it used.
-static u16 GetIncomingMove(u8 battlerAtk, u8 battlerDef)
-{
-    return AI_DATA->lastUsedMove[battlerDef];
-}
 
 // Moves whose damage the AI can't simulate in advance: Counter and Mirror Coat
 // return the damage taken this turn, Bide over two turns, Future Sight hits
@@ -144,30 +142,13 @@ static bool32 IsPinchBerryHoldEffect(u8 holdEffect)
 // Choosing a move
 // ---------------------------------------------------------------------------
 
-u8 BattleAI_ChooseMoveIndexWithLogic(void)
+// Runs the AI_LOGIC_* steps on the move slots in slotMask.
+static void RunScoringSteps(u8 battlerAtk, u8 battlerDef, u8 slotMask)
 {
     struct AiLogicData *aiData = AI_DATA;
-    u8 battlerAtk = gBattlerAttacker;
-    u8 battlerDef = gBattlerTarget;
     u16 flags = AI_THINKING_STRUCT->aiLogicFlags;
-    u8 consideredMoves[MAX_MON_MOVES];
-    u8 numOfBestMoves, logicId, i;
-    s32 bestScore;
+    u8 logicId, i;
     u16 move;
-    u8 usableMoves = 0;
-
-    AI_SetLogicDataForTurn(battlerAtk);
-    aiData->shouldConsiderExplosion = RandomPercentage(GetAIExplosionChanceFromHP(aiData->hpPercents[battlerAtk]));
-    aiData->partnerMove = MOVE_NONE;
-
-    for (i = 0; i < MAX_MON_MOVES; i++)
-    {
-        aiData->moveScores[i] = AI_THINKING_STRUCT->score[i]; // 100, or 0 if the move can't be used
-        if (aiData->moveScores[i] > 0 && gBattleMons[battlerAtk].pp[i] != 0 && gBattleMons[battlerAtk].moves[i] != MOVE_NONE)
-            usableMoves |= gBitTable[i];
-    }
-    if (usableMoves == 0) // never happens: the battle uses Struggle without asking the AI
-        usableMoves = 1;
 
     for (logicId = 0; flags != 0 && logicId < ARRAY_COUNT(sBattleAiFuncTable); logicId++, flags >>= 1)
     {
@@ -175,6 +156,8 @@ u8 BattleAI_ChooseMoveIndexWithLogic(void)
             continue;
         for (i = 0; i < MAX_MON_MOVES; i++)
         {
+            if (!(slotMask & gBitTable[i]))
+                continue;
             if (gBattleMons[battlerAtk].pp[i] == 0)
                 move = MOVE_NONE;
             else
@@ -189,6 +172,67 @@ u8 BattleAI_ChooseMoveIndexWithLogic(void)
         }
     }
     AI_THINKING_STRUCT->movesetIndex = 0;
+}
+
+// Level 10, when it expects the target to switch: scores the moves against
+// the mon it expects to come in. Pursuit hits the mon going out, so it is
+// scored against that one.
+static void RunScoringStepsAgainstSwitchin(u8 battlerAtk, u8 battlerDef)
+{
+    struct AiLogicData *aiData = AI_DATA;
+    s32 scores[MAX_MON_MOVES];
+    u8 switchin = aiData->predictedSwitchin[battlerDef];
+    u8 pursuitSlots = 0;
+    void *backup;
+    u8 i;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (gBattleMoves[gBattleMons[battlerAtk].moves[i]].effect == EFFECT_PURSUIT)
+            pursuitSlots |= gBitTable[i];
+    }
+
+    backup = AI_BeginSwitchinSimulation(battlerDef);
+    if (backup == NULL)
+    {
+        RunScoringSteps(battlerAtk, battlerDef, 0xF);
+        return;
+    }
+    AI_SetSwitchinCandidate(battlerDef, &AI_GetBattlerParty(battlerDef)[switchin], switchin);
+    RunScoringSteps(battlerAtk, battlerDef, 0xF & ~pursuitSlots);
+    memcpy(scores, aiData->moveScores, sizeof(scores));
+    AI_EndSwitchinSimulation(battlerDef, backup);
+    memcpy(aiData->moveScores, scores, sizeof(scores));
+    RunScoringSteps(battlerAtk, battlerDef, pursuitSlots);
+}
+
+// Scores the attacker's moves against the target and returns the slot to
+// use. Moves start at AI_THINKING_STRUCT->score (100, or 0 if unusable).
+static u8 ScoreAndChooseMove(u8 battlerAtk, u8 battlerDef)
+{
+    struct AiLogicData *aiData = AI_DATA;
+    u8 consideredMoves[MAX_MON_MOVES];
+    u8 numOfBestMoves, i;
+    s32 bestScore;
+    u8 usableMoves = 0;
+
+    aiData->shouldConsiderExplosion = RandomPercentage(GetAIExplosionChanceFromHP(aiData->hpPercents[battlerAtk]));
+    aiData->partnerMove = MOVE_NONE;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        aiData->moveScores[i] = AI_THINKING_STRUCT->score[i]; // 100, or 0 if the move can't be used
+        if (aiData->moveScores[i] > 0 && gBattleMons[battlerAtk].pp[i] != 0 && gBattleMons[battlerAtk].moves[i] != MOVE_NONE)
+            usableMoves |= gBitTable[i];
+    }
+    if (usableMoves == 0) // never happens: the battle uses Struggle without asking the AI
+        usableMoves = 1;
+
+    if ((aiData->knowledgeFlags & AI_PREDICT_INCOMING_MON) && IsBattlerPredictedToSwitch(battlerDef)
+     && aiData->predictedSwitchin[battlerDef] < PARTY_SIZE)
+        RunScoringStepsAgainstSwitchin(battlerAtk, battlerDef);
+    else
+        RunScoringSteps(battlerAtk, battlerDef, 0xF);
 
     if (AI_THINKING_STRUCT->aiLogicFlags & AI_LOGIC_CHECK_VIABILITY)
         AI_CompareDamagingMoves(battlerAtk, battlerDef);
@@ -223,7 +267,30 @@ u8 BattleAI_ChooseMoveIndexWithLogic(void)
             AI_THINKING_STRUCT->score[i] = aiData->moveScores[i];
     }
 
-    i = consideredMoves[Random() % numOfBestMoves];
+    return consideredMoves[Random() % numOfBestMoves];
+}
+
+u8 BattleAI_ChooseMoveIndexWithLogic(void)
+{
+    struct AiLogicData *aiData = AI_DATA;
+    u8 battlerAtk = gBattlerAttacker;
+    u8 battlerDef = gBattlerTarget;
+    u8 i;
+
+    AI_SetLogicDataForTurn(battlerAtk);
+    AI_SetupPredictions(battlerAtk);
+#if AI_DEBUG_CHECKS
+    for (i = 0; i < gBattlersCount; i++)
+    {
+        if (GetBattlerSide(i) == B_SIDE_PLAYER && IsBattlerAlive(i))
+            DebugPrintfLevel(MGBA_LOG_INFO, "AIKNOWN turn=%d lvl=%d opp=%d species=%d known=%d,%d,%d,%d real=%d,%d,%d,%d ability=%d/%d item=%d/%d",
+                gBattleResults.battleTurnCounter, AI_THINKING_STRUCT->aiLevel, i, gBattleMons[i].species,
+                AI_GetMovesArray(i)[0], AI_GetMovesArray(i)[1], AI_GetMovesArray(i)[2], AI_GetMovesArray(i)[3],
+                gBattleMons[i].moves[0], gBattleMons[i].moves[1], gBattleMons[i].moves[2], gBattleMons[i].moves[3],
+                aiData->abilities[i], gBattleMons[i].ability, aiData->items[i], gBattleMons[i].item);
+    }
+#endif
+    i = ScoreAndChooseMove(battlerAtk, battlerDef);
 #if AI_DEBUG_CHECKS
     DebugPrintfLevel(MGBA_LOG_INFO, "AISCORE atk=%d def=%d lvl=%d %d:%d %d:%d %d:%d %d:%d pick=%d",
         battlerAtk, battlerDef, AI_THINKING_STRUCT->aiLevel,
@@ -233,6 +300,108 @@ u8 BattleAI_ChooseMoveIndexWithLogic(void)
 #endif
     AI_ClearLogicData();
     return i;
+}
+
+// ---------------------------------------------------------------------------
+// Predicting the player (levels 7+)
+// ---------------------------------------------------------------------------
+
+// Chance that the AI acts on a predicted switch, as in the expansion AI. The
+// AI always works out whether it expects a switch, so its thinking time doesn't
+// give the prediction away.
+#define PREDICT_SWITCH_CHANCE 50
+
+// The move the AI would use in the player's place, with only the moves, item
+// and ability it knows of (AI_BeginPlayAsBattler). MOVE_NONE if it knows of
+// no usable move.
+static u16 PredictMove(u8 battler, u8 battlerAi)
+{
+    struct AiLogicData *aiData = AI_DATA;
+    u8 usableMoves = 0;
+    u8 i;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (gBattleMons[battler].moves[i] != MOVE_NONE && gBattleMons[battler].pp[i] != 0
+         && !(aiData->moveLimitations[battler] & gBitTable[i]))
+        {
+            AI_THINKING_STRUCT->score[i] = 100;
+            usableMoves |= gBitTable[i];
+        }
+        else
+        {
+            AI_THINKING_STRUCT->score[i] = 0;
+        }
+    }
+    if (usableMoves == 0)
+        return MOVE_NONE;
+    return gBattleMons[battler].moves[ScoreAndChooseMove(battler, battlerAi)];
+}
+
+void AI_SetupPredictions(u8 battlerAi)
+{
+    struct AiLogicData *aiData = AI_DATA;
+    u8 flags = aiData->knowledgeFlags;
+    u8 turn = gBattleResults.battleTurnCounter + 1;
+    u16 predictedMove[MAX_BATTLERS_COUNT];
+    u8 predictedSwitchin[MAX_BATTLERS_COUNT];
+    u8 predictedSwitches = 0;
+    u8 battler;
+    void *backup;
+
+    aiData->predictingMove = FALSE;
+    aiData->predictingSwitch = FALSE;
+    if (!(flags & (AI_PREDICT_MOVE | AI_PREDICT_SWITCH)) || aiData->predictionInProgress)
+        return;
+
+    // Predict once per turn, so every decision of the turn agrees.
+    if (aiData->predictionTurn != turn || aiData->predictionBattler != battlerAi)
+    {
+        for (battler = 0; battler < MAX_BATTLERS_COUNT; battler++)
+        {
+            predictedMove[battler] = MOVE_NONE;
+            predictedSwitchin[battler] = PARTY_SIZE;
+        }
+        for (battler = 0; battler < gBattlersCount; battler++)
+        {
+            if (GetBattlerSide(battler) != B_SIDE_PLAYER || !IsBattlerAlive(battler))
+                continue;
+            backup = AI_BeginPlayAsBattler(battler);
+            if (backup == NULL)
+                continue;
+            aiData->predictionInProgress = TRUE;
+            if (flags & AI_PREDICT_MOVE)
+                predictedMove[battler] = PredictMove(battler, battlerAi);
+            if ((flags & AI_PREDICT_SWITCH) && !IsDoubleBattle())
+            {
+                if (AI_WouldBattlerSwitch(battler))
+                    predictedSwitches |= gBitTable[battler];
+                predictedSwitchin[battler] = aiData->mostSuitableMonId[battler];
+            }
+            AI_EndPlayAsBattler(backup); // also ends predictionInProgress
+        }
+
+        memcpy(aiData->predictedMove, predictedMove, sizeof(predictedMove));
+        memcpy(aiData->predictedSwitchin, predictedSwitchin, sizeof(predictedSwitchin));
+        aiData->predictedSwitches = predictedSwitches;
+        aiData->predictSwitchRoll = RandomPercentage(PREDICT_SWITCH_CHANCE);
+        aiData->predictionTurn = turn;
+        aiData->predictionBattler = battlerAi;
+#if AI_DEBUG_CHECKS
+        for (battler = 0; battler < gBattlersCount; battler++)
+        {
+            if (GetBattlerSide(battler) == B_SIDE_PLAYER && IsBattlerAlive(battler))
+                DebugPrintfLevel(MGBA_LOG_INFO, "AIPREDICT turn=%d opp=%d species=%d known=%d,%d,%d,%d move=%d switch=%d in=%d roll=%d",
+                    turn - 1, battler, gBattleMons[battler].species,
+                    AI_GetMovesArray(battler)[0], AI_GetMovesArray(battler)[1], AI_GetMovesArray(battler)[2], AI_GetMovesArray(battler)[3],
+                    predictedMove[battler], (predictedSwitches & gBitTable[battler]) != 0, predictedSwitchin[battler],
+                    aiData->predictSwitchRoll);
+        }
+#endif
+    }
+
+    aiData->predictingMove = (flags & AI_PREDICT_MOVE) != 0;
+    aiData->predictingSwitch = (flags & AI_PREDICT_SWITCH) && aiData->predictSwitchRoll;
 }
 
 // ---------------------------------------------------------------------------
@@ -267,7 +436,7 @@ static s32 AI_CheckBadMove(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
      && moveEffect != EFFECT_SEMI_INVULNERABLE
      && !sureHit
      && !AI_CanHitSemiInvulnerable(move, battlerDef)
-     && AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY))
+     && AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY))
         RETURN_SCORE_MINUS(10);
 
     // Don't charge up a move when the target can KO the AI first.
@@ -305,7 +474,7 @@ static s32 AI_CheckBadMove(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
     switch (moveEffect)
     {
     case EFFECT_VITAL_THROW: // moves last
-        if (AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY) && aiData->hpPercents[battlerAtk] < 40)
+        if (AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY) && aiData->hpPercents[battlerAtk] < 40)
             ADJUST_SCORE(-2);
         break;
     // stat raising effects
@@ -505,7 +674,7 @@ static s32 AI_CheckBadMove(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
     case EFFECT_DISABLE:
         if (gDisableStructs[battlerDef].disabledMove == MOVE_NONE)
         {
-            if (AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY))
+            if (AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY))
             {
                 if (aiData->lastUsedMove[battlerDef] == MOVE_NONE)
                     ADJUST_SCORE(-10); // nothing to disable
@@ -523,7 +692,7 @@ static s32 AI_CheckBadMove(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
     case EFFECT_ENCORE:
         if (gDisableStructs[battlerDef].encoredMove == MOVE_NONE)
         {
-            if (AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY))
+            if (AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY))
             {
                 if (aiData->lastUsedMove[battlerDef] == MOVE_NONE)
                     ADJUST_SCORE(-10); // nothing to encore
@@ -789,7 +958,7 @@ static s32 AI_CheckBadMove(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
         break;
     case EFFECT_SPITE:
     case EFFECT_MIMIC:
-        if (AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY))
+        if (AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY))
         {
             if (aiData->lastUsedMove[battlerDef] == MOVE_NONE)
                 ADJUST_SCORE(-10);
@@ -843,7 +1012,7 @@ static s32 AI_CheckBadMove(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
         break;
     case EFFECT_SEMI_INVULNERABLE:
         if (predictedMove != MOVE_NONE
-         && AI_IsSlower(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY)
+         && AI_IsSlower(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY)
          && gBattleMoves[predictedMove].effect == EFFECT_SEMI_INVULNERABLE)
             ADJUST_SCORE(-10); // the target will just dodge too
         if (BattlerWillFaintFromWeather(battlerAtk, abilityAtk) && (move == MOVE_FLY || move == MOVE_BOUNCE))
@@ -884,7 +1053,7 @@ static s32 AI_CheckBadMove(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
             ADJUST_SCORE(-10);
         break;
     case EFFECT_FLAIL:
-        if (AI_IsSlower(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY) || aiData->hpPercents[battlerAtk] > 50)
+        if (AI_IsSlower(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY) || aiData->hpPercents[battlerAtk] > 50)
             ADJUST_SCORE(-4);
         break;
     default:
@@ -942,7 +1111,7 @@ static s32 AI_CheckBadMove(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
 static s32 AI_TryToFaint(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
 {
     u8 movesetIndex = AI_THINKING_STRUCT->movesetIndex;
-    bool32 aiIsFaster = AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY);
+    bool32 aiIsFaster = AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY);
 
     if (IsTargetingPartner(battlerAtk, battlerDef))
         return score;
@@ -1184,7 +1353,7 @@ static s32 AI_CalcMoveEffectScore(u8 battlerAtk, u8 battlerDef, u16 move)
     case EFFECT_DISABLE:
         if (gDisableStructs[battlerDef].disabledMove == MOVE_NONE
          && aiData->lastUsedMove[battlerDef] != MOVE_NONE
-         && AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY)
+         && AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY)
          && CanTargetMoveFaintAi(aiData->lastUsedMove[battlerDef], battlerDef, battlerAtk, 1))
             ADJUST_SCORE(GOOD_EFFECT); // disable the move that can KO the AI
         break;
@@ -1207,7 +1376,7 @@ static s32 AI_CalcMoveEffectScore(u8 battlerAtk, u8 battlerDef, u16 move)
             ADJUST_SCORE(GOOD_EFFECT);
         break;
     case EFFECT_DESTINY_BOND:
-        if (AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY) && CanTargetFaintAi(battlerDef, battlerAtk))
+        if (AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY) && CanTargetFaintAi(battlerDef, battlerAtk))
             ADJUST_SCORE(GOOD_EFFECT);
         break;
     case EFFECT_WISH:
@@ -1280,7 +1449,7 @@ static s32 AI_CalcMoveEffectScore(u8 battlerAtk, u8 battlerDef, u16 move)
         {
             u8 predictedEffect = gBattleMoves[predictedMove].effect;
 
-            if (AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY)
+            if (AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY)
              && (IsExplosionMove(predictedMove) || predictedEffect == EFFECT_PROTECT))
                 ADJUST_SCORE(GOOD_EFFECT);
             else if (predictedEffect == EFFECT_SEMI_INVULNERABLE && !(gStatuses3[battlerDef] & STATUS3_SEMI_INVULNERABLE))
@@ -1308,7 +1477,7 @@ static s32 AI_CalcMoveEffectScore(u8 battlerAtk, u8 battlerDef, u16 move)
         break;
     case EFFECT_ATTRACT:
         if (isBattle1v1
-         && AI_IsSlower(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY)
+         && AI_IsSlower(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY)
          && BattlerWillFaintFromSecondaryDamage(battlerDef, abilityDef))
             break; // the target faints before it matters
         if ((gBattleMons[battlerDef].status1 & STATUS1_ANY)
@@ -1418,7 +1587,7 @@ static s32 AI_CalcMoveEffectScore(u8 battlerAtk, u8 battlerDef, u16 move)
             ADJUST_SCORE(GOOD_EFFECT);
         break;
     case EFFECT_ENDEAVOR:
-        if (AI_IsSlower(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY) && !CanTargetFaintAi(battlerDef, battlerAtk))
+        if (AI_IsSlower(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY) && !CanTargetFaintAi(battlerDef, battlerAtk))
             ADJUST_SCORE(DECENT_EFFECT);
         break;
     case EFFECT_RAPID_SPIN:
@@ -1666,7 +1835,7 @@ static void AI_CompareDamagingMoves(u8 battlerAtk, u8 battlerDef)
             if (moves[compareId] != MOVE_NONE && gBattleMoves[moves[compareId]].power != 0)
             {
                 noOfHits[compareId] = GetNoOfHitsToKOBattler(battlerAtk, battlerDef, compareId, AI_ATTACKING, CONSIDER_ENDURE);
-                moveIsFaster[compareId] = AI_IsFaster(battlerAtk, battlerDef, moves[compareId], MOVE_NONE, CONSIDER_PRIORITY);
+                moveIsFaster[compareId] = AI_IsFaster(battlerAtk, battlerDef, moves[compareId], GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY);
                 tempMoveScores[compareId] = AI_SCORE_DEFAULT;
                 if (noOfHits[compareId] < leastHits && noOfHits[compareId] != 0)
                     leastHits = noOfHits[compareId];
@@ -2104,5 +2273,106 @@ static s32 AI_HPAware(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
         if (IsBattleMoveStatus(move))
             ADJUST_SCORE(-2);
     }
+    return score;
+}
+
+// ---------------------------------------------------------------------------
+// AI_LOGIC_PREDICT_SWITCH: when the AI expects the target to switch out,
+// prefer moves that make use of the free turn and avoid moves that would be
+// wasted on the mon coming in
+// ---------------------------------------------------------------------------
+
+static s32 AI_PredictSwitch(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
+{
+    struct AiLogicData *aiData = AI_DATA;
+    s32 unmodifiedScore = score;
+    u8 moveIndex = AI_THINKING_STRUCT->movesetIndex;
+    uq4_12_t effectiveness = aiData->effectiveness[battlerAtk][battlerDef][moveIndex];
+    bool32 opposingHazards = (gSideStatuses[GET_BATTLER_SIDE(battlerDef)] & SIDE_STATUS_SPIKES) != 0;
+    bool32 aiHazards = (gSideStatuses[GET_BATTLER_SIDE(battlerAtk)] & SIDE_STATUS_SPIKES) != 0;
+    u32 hitsToKO;
+
+    switch (gBattleMoves[move].effect)
+    {
+    case EFFECT_PURSUIT:
+        hitsToKO = GetNoOfHitsToKOBattler(battlerAtk, battlerDef, moveIndex, AI_ATTACKING, CONSIDER_ENDURE);
+        if (hitsToKO == 2)
+            ADJUST_SCORE(GOOD_EFFECT);
+        else if (hitsToKO == 1)
+            ADJUST_SCORE(BEST_EFFECT);
+        break;
+    case EFFECT_FOCUS_PUNCH:
+        ADJUST_SCORE(DECENT_EFFECT);
+        if (AI_THINKING_STRUCT->aiLogicFlags & AI_LOGIC_CHECK_BAD_MOVE)
+        {
+            if (aiData->abilities[battlerDef] == ABILITY_WONDER_GUARD && effectiveness < AI_EFFECTIVENESS_2)
+                ADJUST_SCORE(10);
+            if (HasDamagingMove(battlerDef)
+             && !((gBattleMons[battlerAtk].status2 & STATUS2_SUBSTITUTE)
+              || IsBattlerIncapacitated(battlerDef, aiData->abilities[battlerDef])
+              || (gBattleMons[battlerDef].status2 & (STATUS2_INFATUATION | STATUS2_CONFUSION))))
+                ADJUST_SCORE(10);
+        }
+        break;
+    case EFFECT_LIGHT_SCREEN:
+    case EFFECT_REFLECT:
+    case EFFECT_SPIKES:
+        ADJUST_SCORE(BEST_EFFECT);
+        break;
+    case EFFECT_FUTURE_SIGHT:
+    case EFFECT_RAIN_DANCE:
+    case EFFECT_SUNNY_DAY:
+    case EFFECT_SANDSTORM:
+    case EFFECT_HAIL:
+        ADJUST_SCORE(GOOD_EFFECT);
+        break;
+    case EFFECT_ROAR:
+        if (opposingHazards)
+            ADJUST_SCORE(GOOD_EFFECT);
+        break;
+    case EFFECT_RAPID_SPIN:
+        if (aiHazards)
+            ADJUST_SCORE(BEST_EFFECT);
+        break;
+    case EFFECT_WISH:
+    case EFFECT_HEAL_BELL:
+        if (ShouldUseWishAromatherapy(battlerAtk, battlerDef, move))
+            ADJUST_SCORE(DECENT_EFFECT);
+        break;
+    case EFFECT_RESTORE_HP:
+        if (aiData->hpPercents[battlerAtk] < 60)
+            ADJUST_SCORE(GOOD_EFFECT);
+        break;
+
+    // Fail or are wasted if the target switches.
+    case EFFECT_PROTECT:
+    case EFFECT_COUNTER:
+    case EFFECT_MIRROR_COAT:
+    case EFFECT_ENCORE:
+    case EFFECT_FOLLOW_ME:
+    case EFFECT_DISABLE:
+    case EFFECT_ENDURE:
+    case EFFECT_HAZE:
+    case EFFECT_MAGIC_COAT:
+    case EFFECT_SNATCH:
+        ADJUST_SCORE(WORST_EFFECT);
+        break;
+
+    // Get the AI stuck facing the mon coming in.
+    case EFFECT_IMPRISON:
+    case EFFECT_TAUNT:
+    case EFFECT_INGRAIN:
+    case EFFECT_MEAN_LOOK:
+    case EFFECT_TRAP:
+        ADJUST_SCORE(AWFUL_EFFECT);
+        break;
+    default:
+        break;
+    }
+
+    // Like the expansion AI, always do the work above, so the AI's thinking
+    // time doesn't show whether it expects a switch.
+    if (!IsBattlerPredictedToSwitch(battlerDef))
+        return unmodifiedScore;
     return score;
 }

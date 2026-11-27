@@ -20,6 +20,11 @@ bool32 AI_TrySwitchWithLogic(u8 battler);
 // PARTY_SIZE if no mon can come in.
 u8 AI_ChooseMonToSendIn(u8 battler);
 
+// Would the AI switch out in this battler's place (used to predict the
+// player's switches)? Sets AI_LOGIC_DATA->mostSuitableMonId[battler] to the
+// mon it expects to come in, among the party mons it has seen.
+bool32 AI_WouldBattlerSwitch(u8 battler);
+
 // Is this party mon the ace, kept for last (AI_SWITCH_ACE_POKEMON)?
 bool32 IsAceMon(u8 battler, u8 monPartyId);
 

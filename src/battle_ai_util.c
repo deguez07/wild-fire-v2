@@ -61,6 +61,36 @@ struct Pokemon *AI_GetBattlerParty(u8 battler)
     return (GetBattlerSide(battler) == B_SIDE_PLAYER) ? gPlayerParty : gEnemyParty;
 }
 
+// The move the AI expects from the target: the predicted one when the AI
+// predicts moves (level 7+), else the last move the target used.
+u16 GetIncomingMove(u8 battlerAtk, u8 battlerDef)
+{
+    if (AI_DATA->predictingMove && AI_DATA->predictedMove[battlerDef] != MOVE_NONE)
+        return AI_DATA->predictedMove[battlerDef];
+    return AI_DATA->lastUsedMove[battlerDef];
+}
+
+// The target's move for turn order checks: the predicted move if it is an
+// attack (Fake Out's priority only works once), else none. Without a
+// prediction the last move doesn't count, like in the expansion AI.
+u16 GetIncomingMoveSpeedCheck(u8 battlerAtk, u8 battlerDef)
+{
+    u16 move;
+
+    if (!AI_DATA->predictingMove)
+        return MOVE_NONE;
+    move = AI_DATA->predictedMove[battlerDef];
+    if (gBattleMoves[move].power != 0 && gBattleMoves[move].effect != EFFECT_FAKE_OUT)
+        return move;
+    return MOVE_NONE;
+}
+
+// Does the AI act on a predicted switch of this battler this turn?
+bool32 IsBattlerPredictedToSwitch(u8 battler)
+{
+    return AI_DATA->predictingSwitch && (AI_DATA->predictedSwitches & gBitTable[battler]);
+}
+
 // Party members that could still be sent in (alive and not on the field).
 // The number of mons the player has left is shown by the party balls.
 s32 CountUsablePartyMons(u8 battler)
@@ -881,7 +911,7 @@ static bool32 AI_IsMoveEffectInPlus(u8 battlerAtk, u8 battlerDef, u16 move, s32 
 {
     u8 abilityAtk = AI_DATA->abilities[battlerAtk];
     u8 abilityDef = AI_DATA->abilities[battlerDef];
-    bool32 aiIsFaster = AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY);
+    bool32 aiIsFaster = AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY);
     struct AiSecondaryEffect secondary;
     u8 stat;
 
@@ -1871,13 +1901,13 @@ bool32 ShouldTryToFlinch(u8 battlerAtk, u8 battlerDef, u8 atkAbility, u8 defAbil
 {
     if (defAbility == ABILITY_SHIELD_DUST || defAbility == ABILITY_INNER_FOCUS
      || DoesSubstituteBlockMove(battlerAtk, battlerDef, move)
-     || AI_IsSlower(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY)) // the target moves first
+     || AI_IsSlower(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY)) // the target moves first
         return FALSE;
 
     if (atkAbility == ABILITY_SERENE_GRACE
      || (gBattleMons[battlerDef].status1 & STATUS1_PARALYSIS)
      || (gBattleMons[battlerDef].status2 & (STATUS2_INFATUATION | STATUS2_CONFUSION))
-     || (AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY) && CanTargetFaintAi(battlerDef, battlerAtk)))
+     || (AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY) && CanTargetFaintAi(battlerDef, battlerAtk)))
         return TRUE;
     return FALSE;
 }
@@ -1888,7 +1918,7 @@ bool32 IsFlinchGuaranteed(u8 battlerAtk, u8 battlerDef, u16 move)
 
     if (secondary.moveEffect != MOVE_EFFECT_FLINCH || !MoveEffectIsGuaranteed(battlerAtk, move, &secondary))
         return FALSE;
-    if (AI_IsSlower(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY))
+    if (AI_IsSlower(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY))
         return FALSE;
     if (DoesSubstituteBlockMove(battlerAtk, battlerDef, move)
      || AI_DATA->abilities[battlerDef] == ABILITY_SHIELD_DUST
@@ -1945,7 +1975,7 @@ bool32 ShouldAbsorb(u8 battlerAtk, u8 battlerDef, u16 move)
     u32 maxHP = gBattleMons[battlerAtk].maxHP;
     u32 currHP = gBattleMons[battlerAtk].hp;
     u32 healAmount = AI_GetDamage(battlerAtk, battlerDef, AI_THINKING_STRUCT->movesetIndex, AI_ATTACKING) / 2;
-    bool32 aiIsFaster = AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY);
+    bool32 aiIsFaster = AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY);
 
     if (healAmount == 0)
         healAmount = 1;
@@ -1968,7 +1998,7 @@ bool32 ShouldRecover(u8 battlerAtk, u8 battlerDef, u16 move, u32 healPercent)
     u32 maxHP = gBattleMons[battlerAtk].maxHP;
     u32 currHP = gBattleMons[battlerAtk].hp;
     u32 healAmount = (healPercent * maxHP) / 100;
-    bool32 aiIsFaster = AI_IsFaster(battlerAtk, battlerDef, move, MOVE_NONE, CONSIDER_PRIORITY);
+    bool32 aiIsFaster = AI_IsFaster(battlerAtk, battlerDef, move, GetIncomingMoveSpeedCheck(battlerAtk, battlerDef), CONSIDER_PRIORITY);
 
     if (healAmount + currHP > maxHP)
         healAmount = maxHP - currHP;

@@ -57,17 +57,17 @@ static const u32 sAiLevelScripts[AI_LEVEL_SMART_SCORING] =
 };
 
 // Move scoring steps of the ported AI (battle_ai_main.c) at levels 4-10.
-// Levels 6-10 add switching and prediction in later stages of the AI upgrade.
 #define AI_LOGIC_BASIC (AI_LOGIC_CHECK_BAD_MOVE | AI_LOGIC_TRY_TO_FAINT | AI_LOGIC_CHECK_VIABILITY | AI_LOGIC_HP_AWARE)
+#define AI_LOGIC_STRONG (AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO)
 static const u16 sAiLevelLogic[AI_LEVEL_MAX + 1] =
 {
     [4]  = AI_LOGIC_BASIC,
-    [5]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
-    [6]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
-    [7]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
-    [8]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
-    [9]  = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
-    [10] = AI_LOGIC_BASIC | AI_LOGIC_TRY_TO_2HKO,
+    [5]  = AI_LOGIC_STRONG,
+    [6]  = AI_LOGIC_STRONG,
+    [7]  = AI_LOGIC_STRONG | AI_LOGIC_PREDICT_SWITCH,
+    [8]  = AI_LOGIC_STRONG | AI_LOGIC_PREDICT_SWITCH,
+    [9]  = AI_LOGIC_STRONG | AI_LOGIC_PREDICT_SWITCH,
+    [10] = AI_LOGIC_STRONG | AI_LOGIC_PREDICT_SWITCH,
 };
 
 // Switching steps of the ported AI (battle_ai_switch.c). Levels 1-4 use the
@@ -81,6 +81,17 @@ static const u8 sAiLevelSwitching[AI_LEVEL_MAX + 1] =
     [8]  = AI_SWITCH_SMART | AI_SWITCH_ACE_POKEMON,
     [9]  = AI_SWITCH_SMART | AI_SWITCH_ACE_POKEMON,
     [10] = AI_SWITCH_SMART | AI_SWITCH_ACE_POKEMON,
+};
+
+// What the ported AI knows about the player and what it predicts (levels 4-10).
+// Levels 4-6 know only what they have seen in this battle.
+#define AI_PREDICT (AI_PREDICT_MOVE | AI_PREDICT_SWITCH)
+static const u8 sAiLevelKnowledge[AI_LEVEL_MAX + 1] =
+{
+    [7]  = AI_PREDICT,
+    [8]  = AI_PREDICT | AI_KNOW_ASSUME_STAB,
+    [9]  = AI_PREDICT | AI_KNOW_OMNISCIENT,
+    [10] = AI_PREDICT | AI_KNOW_OMNISCIENT | AI_PREDICT_INCOMING_MON,
 };
 
 // Extra AI_SCRIPT_* flags on a trainer at level 4+ turn on the matching step.
@@ -434,13 +445,14 @@ static u8 GetAiLevelFromScripts(u32 aiFlags)
 
 // Splits a trainer's aiFlags into the vanilla scripts to run, the ported
 // AI's scoring and switching steps, and the level.
-static void GetAiFlagsAndLevel(u32 aiFlags, u32 *scriptFlags, u16 *logicFlags, u8 *switchFlags, u8 *levelOut)
+static void GetAiFlagsAndLevel(u32 aiFlags, u32 *scriptFlags, u16 *logicFlags, u8 *switchFlags, u8 *knowledgeFlags, u8 *levelOut)
 {
     u8 level = GET_AI_LEVEL(aiFlags);
     s32 i;
 
     *logicFlags = 0;
     *switchFlags = 0;
+    *knowledgeFlags = 0;
     aiFlags &= ~AI_LEVEL_MASK;
     if (level == AI_LEVEL_NONE)
     {
@@ -466,6 +478,7 @@ static void GetAiFlagsAndLevel(u32 aiFlags, u32 *scriptFlags, u16 *logicFlags, u
                     *logicFlags |= sScriptToLogic[i][1];
             }
             aiFlags = 0;
+            *knowledgeFlags = sAiLevelKnowledge[level];
         }
         *switchFlags = sAiLevelSwitching[level];
     }
@@ -478,9 +491,9 @@ static void SetAiFlagsAndLevel(u32 aiFlags)
 {
     u32 scriptFlags;
     u16 logicFlags;
-    u8 switchFlags, level;
+    u8 switchFlags, knowledgeFlags, level;
 
-    GetAiFlagsAndLevel(aiFlags, &scriptFlags, &logicFlags, &switchFlags, &level);
+    GetAiFlagsAndLevel(aiFlags, &scriptFlags, &logicFlags, &switchFlags, &knowledgeFlags, &level);
     AI_THINKING_STRUCT->aiFlags = scriptFlags;
     AI_THINKING_STRUCT->aiLogicFlags = logicFlags;
     AI_THINKING_STRUCT->aiSwitchFlags = switchFlags;
@@ -493,12 +506,26 @@ u8 BattleAI_GetSwitchFlags(void)
 {
     u32 scriptFlags;
     u16 logicFlags;
-    u8 switchFlags, level;
+    u8 switchFlags, knowledgeFlags, level;
 
     if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
         return 0;
-    GetAiFlagsAndLevel(GetBattleAiFlags(), &scriptFlags, &logicFlags, &switchFlags, &level);
+    GetAiFlagsAndLevel(GetBattleAiFlags(), &scriptFlags, &logicFlags, &switchFlags, &knowledgeFlags, &level);
     return switchFlags;
+}
+
+// What the trainer in this battle knows and predicts (AI_KNOW_* and
+// AI_PREDICT_*). Changes nothing, so it is safe to call at any time.
+u8 BattleAI_GetKnowledgeFlags(void)
+{
+    u32 scriptFlags;
+    u16 logicFlags;
+    u8 switchFlags, knowledgeFlags, level;
+
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        return 0;
+    GetAiFlagsAndLevel(GetBattleAiFlags(), &scriptFlags, &logicFlags, &switchFlags, &knowledgeFlags, &level);
+    return knowledgeFlags;
 }
 
 u8 BattleAI_ChooseMoveOrAction(void)
@@ -643,6 +670,7 @@ static void ClearBattlerMoveHistory(u8 battlerId)
 
 void RecordAbilityBattle(u8 battlerId, u8 abilityId)
 {
+    AI_RecordAbility(battlerId, abilityId);
 #ifndef BUGFIX // Only records one ability for the whole side
     if (GetBattlerSide(battlerId) == 0)
         BATTLE_HISTORY->abilities[GET_BATTLER_SIDE(battlerId)] = abilityId;
@@ -653,6 +681,7 @@ void RecordAbilityBattle(u8 battlerId, u8 abilityId)
 
 void RecordItemEffectBattle(u8 battlerId, u8 itemEffect)
 {
+    AI_RecordItem(battlerId);
 #ifndef BUGFIX // Only records one item for the whole side
     if (GetBattlerSide(battlerId) == 0)
         BATTLE_HISTORY->itemEffects[GET_BATTLER_SIDE(battlerId)] = itemEffect;
