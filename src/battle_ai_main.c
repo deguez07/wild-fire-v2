@@ -74,6 +74,7 @@ static s32 AI_TryTo2HKO(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
 static s32 AI_PreferBatonPass(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
 static s32 AI_HPAware(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
 static s32 AI_PredictSwitch(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
+static s32 AI_DoubleBattle(u8 battlerAtk, u8 battlerDef, u16 move, s32 score);
 static void AI_CompareDamagingMoves(u8 battlerAtk, u8 battlerDef);
 
 // Indexed by the bit number of AI_LOGIC_*.
@@ -86,6 +87,7 @@ static const AiScoreFunc sBattleAiFuncTable[] =
     AI_Risky,               // AI_LOGIC_RISKY
     AI_TryTo2HKO,           // AI_LOGIC_TRY_TO_2HKO
     AI_PreferBatonPass,     // AI_LOGIC_PREFER_BATON_PASS
+    AI_DoubleBattle,        // AI_LOGIC_DOUBLE_BATTLE
     AI_HPAware,             // AI_LOGIC_HP_AWARE
     AI_PredictSwitch,       // AI_LOGIC_PREDICT_SWITCH
 };
@@ -142,6 +144,15 @@ static bool32 IsPinchBerryHoldEffect(u8 holdEffect)
 // Choosing a move
 // ---------------------------------------------------------------------------
 
+// In double battles moves are scored against every other battler. Moves that
+// only hit the foes aren't scored against the partner.
+static bool32 ShouldConsiderMoveForBattler(u8 battlerAtk, u8 battlerDef, u16 move)
+{
+    if (battlerDef == BATTLE_PARTNER(battlerAtk) && (gBattleMoves[move].target & (MOVE_TARGET_BOTH | MOVE_TARGET_OPPONENTS_FIELD)))
+        return FALSE;
+    return TRUE;
+}
+
 // Runs the AI_LOGIC_* steps on the move slots in slotMask.
 static void RunScoringSteps(u8 battlerAtk, u8 battlerDef, u8 slotMask)
 {
@@ -165,7 +176,7 @@ static void RunScoringSteps(u8 battlerAtk, u8 battlerDef, u8 slotMask)
 
             AI_THINKING_STRUCT->movesetIndex = i;
             AI_THINKING_STRUCT->moveConsidered = move;
-            if (move != MOVE_NONE && aiData->moveScores[i] > 0)
+            if (move != MOVE_NONE && aiData->moveScores[i] > 0 && ShouldConsiderMoveForBattler(battlerAtk, battlerDef, move))
                 aiData->moveScores[i] = sBattleAiFuncTable[logicId](battlerAtk, battlerDef, move, aiData->moveScores[i]);
             else
                 aiData->moveScores[i] = 0;
@@ -206,27 +217,18 @@ static void RunScoringStepsAgainstSwitchin(u8 battlerAtk, u8 battlerDef)
     RunScoringSteps(battlerAtk, battlerDef, pursuitSlots);
 }
 
-// Scores the attacker's moves against the target and returns the slot to
-// use. Moves start at AI_THINKING_STRUCT->score (100, or 0 if unusable).
-static u8 ScoreAndChooseMove(u8 battlerAtk, u8 battlerDef)
+// Scores the attacker's usable moves against one target, starting from
+// startScores. Leaves the scores in moveScores and returns the best slot
+// (ties at random) and its score.
+static u8 ScoreMovesAgainstTarget(u8 battlerAtk, u8 battlerDef, const s8 *startScores, u8 usableMoves, s32 *bestScoreOut)
 {
     struct AiLogicData *aiData = AI_DATA;
     u8 consideredMoves[MAX_MON_MOVES];
     u8 numOfBestMoves, i;
     s32 bestScore;
-    u8 usableMoves = 0;
-
-    aiData->shouldConsiderExplosion = RandomPercentage(GetAIExplosionChanceFromHP(aiData->hpPercents[battlerAtk]));
-    aiData->partnerMove = MOVE_NONE;
 
     for (i = 0; i < MAX_MON_MOVES; i++)
-    {
-        aiData->moveScores[i] = AI_THINKING_STRUCT->score[i]; // 100, or 0 if the move can't be used
-        if (aiData->moveScores[i] > 0 && gBattleMons[battlerAtk].pp[i] != 0 && gBattleMons[battlerAtk].moves[i] != MOVE_NONE)
-            usableMoves |= gBitTable[i];
-    }
-    if (usableMoves == 0) // never happens: the battle uses Struggle without asking the AI
-        usableMoves = 1;
+        aiData->moveScores[i] = startScores[i];
 
     if ((aiData->knowledgeFlags & AI_PREDICT_INCOMING_MON) && IsBattlerPredictedToSwitch(battlerDef)
      && aiData->predictedSwitchin[battlerDef] < PARTY_SIZE)
@@ -237,7 +239,9 @@ static u8 ScoreAndChooseMove(u8 battlerAtk, u8 battlerDef)
     if (AI_THINKING_STRUCT->aiLogicFlags & AI_LOGIC_CHECK_VIABILITY)
         AI_CompareDamagingMoves(battlerAtk, battlerDef);
 
-    // Pick the highest score among the moves the AI can use; ties at random.
+    for (i = 0; i < MAX_MON_MOVES; i++)
+        aiData->finalScores[battlerDef][i] = (aiData->moveScores[i] < -999) ? -999 : (aiData->moveScores[i] > 999) ? 999 : aiData->moveScores[i];
+
     numOfBestMoves = 0;
     bestScore = 0;
     for (i = 0; i < MAX_MON_MOVES; i++)
@@ -255,6 +259,89 @@ static u8 ScoreAndChooseMove(u8 battlerAtk, u8 battlerDef)
             consideredMoves[numOfBestMoves++] = i;
         }
     }
+    *bestScoreOut = bestScore;
+    return consideredMoves[Random() % numOfBestMoves];
+}
+
+// Scores the attacker's moves and returns the slot to use. Moves start at
+// AI_THINKING_STRUCT->score (100, or 0 if unusable). In single battles the
+// target is battlerDef. In double battles, like the expansion AI, the moves
+// are scored against every other battler and the best target wins; the
+// partner is only picked for a move scoring at least 100.
+static u8 ScoreAndChooseMove(u8 battlerAtk, u8 battlerDef, u8 *targetOut)
+{
+    struct AiLogicData *aiData = AI_DATA;
+    s8 startScores[MAX_MON_MOVES];
+    s32 targetScores[MAX_BATTLERS_COUNT][MAX_MON_MOVES];
+    s32 bestPerTarget[MAX_BATTLERS_COUNT];
+    u8 slotPerTarget[MAX_BATTLERS_COUNT];
+    u8 bestTargets[MAX_BATTLERS_COUNT];
+    u8 numBestTargets, target, slot, i;
+    s32 bestScore;
+    u8 usableMoves = 0;
+
+    aiData->shouldConsiderExplosion = RandomPercentage(GetAIExplosionChanceFromHP(aiData->hpPercents[battlerAtk]));
+    aiData->partnerMove = GetAllyChosenMove(battlerAtk);
+    memset(aiData->finalScores, 0, sizeof(aiData->finalScores));
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        startScores[i] = AI_THINKING_STRUCT->score[i]; // 100, or 0 if the move can't be used
+        if (startScores[i] > 0 && gBattleMons[battlerAtk].pp[i] != 0 && gBattleMons[battlerAtk].moves[i] != MOVE_NONE)
+            usableMoves |= gBitTable[i];
+    }
+    if (usableMoves == 0) // never happens: the battle uses Struggle without asking the AI
+        usableMoves = 1;
+
+    if (!IsDoubleBattle())
+    {
+        target = battlerDef;
+        slot = ScoreMovesAgainstTarget(battlerAtk, battlerDef, startScores, usableMoves, &bestScore);
+    }
+    else
+    {
+        for (target = 0; target < MAX_BATTLERS_COUNT; target++)
+        {
+            bestPerTarget[target] = -1;
+            slotPerTarget[target] = 0;
+            if (target == battlerAtk || target >= gBattlersCount || !IsBattlerAlive(target))
+                continue;
+            slotPerTarget[target] = ScoreMovesAgainstTarget(battlerAtk, target, startScores, usableMoves, &bestPerTarget[target]);
+            memcpy(targetScores[target], aiData->moveScores, sizeof(aiData->moveScores));
+            // Don't use a move on the partner unless it is good.
+            if (target == BATTLE_PARTNER(battlerAtk) && bestPerTarget[target] < AI_SCORE_DEFAULT)
+                bestPerTarget[target] = -1;
+        }
+
+        numBestTargets = 0;
+        bestScore = -1;
+        for (target = 0; target < MAX_BATTLERS_COUNT; target++)
+        {
+            if (target == battlerAtk || target >= gBattlersCount || !IsBattlerAlive(target))
+                continue;
+            if (numBestTargets == 0 || bestScore < bestPerTarget[target])
+            {
+                numBestTargets = 1;
+                bestScore = bestPerTarget[target];
+                bestTargets[0] = target;
+            }
+            else if (bestScore == bestPerTarget[target])
+            {
+                bestTargets[numBestTargets++] = target;
+            }
+        }
+        if (numBestTargets == 0) // nobody else is left; the battle is about to end
+        {
+            target = battlerDef;
+            slot = ScoreMovesAgainstTarget(battlerAtk, battlerDef, startScores, usableMoves, &bestScore);
+        }
+        else
+        {
+            target = bestTargets[Random() % numBestTargets];
+            slot = slotPerTarget[target];
+            memcpy(aiData->moveScores, targetScores[target], sizeof(aiData->moveScores));
+        }
+    }
 
     // Keep the vanilla score array in step for anything that reads it.
     for (i = 0; i < MAX_MON_MOVES; i++)
@@ -267,7 +354,8 @@ static u8 ScoreAndChooseMove(u8 battlerAtk, u8 battlerDef)
             AI_THINKING_STRUCT->score[i] = aiData->moveScores[i];
     }
 
-    return consideredMoves[Random() % numOfBestMoves];
+    *targetOut = target;
+    return slot;
 }
 
 u8 BattleAI_ChooseMoveIndexWithLogic(void)
@@ -275,7 +363,7 @@ u8 BattleAI_ChooseMoveIndexWithLogic(void)
     struct AiLogicData *aiData = AI_DATA;
     u8 battlerAtk = gBattlerAttacker;
     u8 battlerDef = gBattlerTarget;
-    u8 i;
+    u8 i, target;
 
     AI_SetLogicDataForTurn(battlerAtk);
     AI_SetupPredictions(battlerAtk);
@@ -290,10 +378,11 @@ u8 BattleAI_ChooseMoveIndexWithLogic(void)
                 aiData->abilities[i], gBattleMons[i].ability, aiData->items[i], gBattleMons[i].item);
     }
 #endif
-    i = ScoreAndChooseMove(battlerAtk, battlerDef);
+    i = ScoreAndChooseMove(battlerAtk, battlerDef, &target);
+    gBattlerTarget = target; // the battle controller sends this target with the move
 #if AI_DEBUG_CHECKS
     DebugPrintfLevel(MGBA_LOG_INFO, "AISCORE atk=%d def=%d lvl=%d %d:%d %d:%d %d:%d %d:%d pick=%d",
-        battlerAtk, battlerDef, AI_THINKING_STRUCT->aiLevel,
+        battlerAtk, target, AI_THINKING_STRUCT->aiLevel,
         gBattleMons[battlerAtk].moves[0], aiData->moveScores[0], gBattleMons[battlerAtk].moves[1], aiData->moveScores[1],
         gBattleMons[battlerAtk].moves[2], aiData->moveScores[2], gBattleMons[battlerAtk].moves[3], aiData->moveScores[3],
         gBattleMons[battlerAtk].moves[i]);
@@ -318,7 +407,7 @@ static u16 PredictMove(u8 battler, u8 battlerAi)
 {
     struct AiLogicData *aiData = AI_DATA;
     u8 usableMoves = 0;
-    u8 i;
+    u8 i, target;
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
@@ -335,7 +424,7 @@ static u16 PredictMove(u8 battler, u8 battlerAi)
     }
     if (usableMoves == 0)
         return MOVE_NONE;
-    return gBattleMons[battler].moves[ScoreAndChooseMove(battler, battlerAi)];
+    return gBattleMons[battler].moves[ScoreAndChooseMove(battler, battlerAi, &target)];
 }
 
 void AI_SetupPredictions(u8 battlerAi)
@@ -354,8 +443,9 @@ void AI_SetupPredictions(u8 battlerAi)
     if (!(flags & (AI_PREDICT_MOVE | AI_PREDICT_SWITCH)) || aiData->predictionInProgress)
         return;
 
-    // Predict once per turn, so every decision of the turn agrees.
-    if (aiData->predictionTurn != turn || aiData->predictionBattler != battlerAi)
+    // Predict once per turn, so every decision of the turn (both AI battlers
+    // in a double battle) agrees.
+    if (aiData->predictionTurn != turn)
     {
         for (battler = 0; battler < MAX_BATTLERS_COUNT; battler++)
         {
@@ -372,7 +462,7 @@ void AI_SetupPredictions(u8 battlerAi)
             aiData->predictionInProgress = TRUE;
             if (flags & AI_PREDICT_MOVE)
                 predictedMove[battler] = PredictMove(battler, battlerAi);
-            if ((flags & AI_PREDICT_SWITCH) && !IsDoubleBattle())
+            if (flags & AI_PREDICT_SWITCH)
             {
                 if (AI_WouldBattlerSwitch(battler))
                     predictedSwitches |= gBitTable[battler];
@@ -2374,5 +2464,255 @@ static s32 AI_PredictSwitch(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
     // time doesn't show whether it expects a switch.
     if (!IsBattlerPredictedToSwitch(battlerDef))
         return unmodifiedScore;
+    return score;
+}
+
+// ---------------------------------------------------------------------------
+// AI_LOGIC_DOUBLE_BATTLE: work with the partner in double battles. The Gen 3
+// part of the expansion AI's AI_DoubleBattle.
+// ---------------------------------------------------------------------------
+
+// Hits the partner may take from friendly fire, as in the expansion AI.
+#define FRIENDLY_FIRE_RISKY_THRESHOLD  2
+#define FRIENDLY_FIRE_NORMAL_THRESHOLD 3
+
+// Does hitting the partner with this ability's type help it? Volt Absorb and
+// Water Absorb heal it (only an HP aware AI counts on that), Flash Fire powers
+// up its Fire moves.
+static bool32 ShouldTriggerPartnerAbility(u8 partner, u8 ability)
+{
+    switch (ability)
+    {
+    case ABILITY_VOLT_ABSORB:
+    case ABILITY_WATER_ABSORB:
+        return (AI_THINKING_STRUCT->aiLogicFlags & AI_LOGIC_HP_AWARE) != 0;
+    case ABILITY_FLASH_FIRE:
+        return HasMoveWithType(partner, TYPE_FIRE) && !(gBattleResources->flags->flags[partner] & RESOURCE_FLAG_FLASH_FIRE);
+    default:
+        return FALSE;
+    }
+}
+
+static s32 AI_DoubleBattle(u8 battlerAtk, u8 battlerDef, u16 move, s32 score)
+{
+    struct AiLogicData *aiData = AI_DATA;
+    u8 effect = gBattleMoves[move].effect;
+    u8 moveTarget = gBattleMoves[move].target;
+    u8 moveType = GetBattleMoveType(move, battlerAtk);
+    u8 moveIndex = AI_THINKING_STRUCT->movesetIndex;
+    u8 partner = BATTLE_PARTNER(battlerAtk);
+    u8 partnerAbility = aiData->abilities[partner];
+    u8 partnerHoldEffect = aiData->holdEffects[partner];
+    u8 partnerEffect = gBattleMoves[aiData->partnerMove].effect;
+    u16 predictedMove = GetIncomingMove(battlerAtk, battlerDef);
+    bool32 hasPartner = HasPartner(battlerAtk);
+    bool32 hasTwoOpponents = HasTwoOpponents(battlerAtk);
+    bool32 partnerProtecting = hasPartner && aiData->partnerMove != MOVE_NONE && partnerEffect == EFFECT_PROTECT;
+    u32 friendlyFireThreshold = (AI_THINKING_STRUCT->aiLogicFlags & AI_LOGIC_RISKY) ? FRIENDLY_FIRE_RISKY_THRESHOLD : FRIENDLY_FIRE_NORMAL_THRESHOLD;
+    u32 hitsToKOPartner = hasPartner ? GetNoOfHitsToKOBattler(battlerAtk, partner, moveIndex, AI_ATTACKING, CONSIDER_ENDURE) : 0;
+    bool32 wouldPartnerFaint = hasPartner && CanIndexMoveFaintTarget(battlerAtk, partner, moveIndex, AI_ATTACKING) && !partnerProtecting;
+    bool32 isFriendlyFireOK = !wouldPartnerFaint && (hitsToKOPartner == 0 || hitsToKOPartner > friendlyFireThreshold);
+    bool32 isMoveAffectedByPartnerAbility;
+    u32 ownHits1, ownHits2, partnerHits1, partnerHits2;
+
+    // What the partner does this turn.
+    if (aiData->partnerMove != MOVE_NONE && hasPartner)
+    {
+        // Weather, screens, Haze and so on: once is enough.
+        if (AreMovesEquivalent(battlerAtk, battlerDef, partner, move, aiData->partnerMove))
+            ADJUST_SCORE(-10);
+
+        switch (partnerEffect)
+        {
+        case EFFECT_HELPING_HAND:
+            if (IsBattleMoveStatus(move))
+                ADJUST_SCORE(-7);
+            break;
+        case EFFECT_PERISH_SONG:
+            // Trap the target so Perish Song can't be switched out of.
+            if (!(gBattleMons[battlerDef].status2 & (STATUS2_ESCAPE_PREVENTION | STATUS2_WRAPPED))
+             && (IsTrappingMove(move) || gBattleMoves[predictedMove].effect == EFFECT_INGRAIN))
+                ADJUST_SCORE(WEAK_EFFECT);
+            break;
+        default:
+            break;
+        }
+    }
+
+    // Our move compared with the partner's situation.
+    switch (effect)
+    {
+    case EFFECT_HELPING_HAND:
+        if (!hasPartner || !HasDamagingMove(partner)
+         || (aiData->partnerMove != MOVE_NONE && IsBattleMoveStatus(aiData->partnerMove)))
+        {
+            ADJUST_SCORE(WORST_EFFECT);
+        }
+        else
+        {
+            ownHits1 = GetBestNoOfHitsToKO(battlerAtk, LEFT_FOE(battlerAtk), AI_ATTACKING);
+            partnerHits1 = GetBestNoOfHitsToKO(partner, LEFT_FOE(battlerAtk), AI_ATTACKING);
+            ownHits2 = GetBestNoOfHitsToKO(battlerAtk, RIGHT_FOE(battlerAtk), AI_ATTACKING);
+            partnerHits2 = GetBestNoOfHitsToKO(partner, RIGHT_FOE(battlerAtk), AI_ATTACKING);
+
+            if (hasTwoOpponents)
+            {
+                // It may faint before doing anything else.
+                if (CanTargetFaintAi(LEFT_FOE(battlerAtk), battlerAtk) && CanTargetFaintAi(RIGHT_FOE(battlerAtk), battlerAtk)
+                 && AI_IsSlower(battlerAtk, LEFT_FOE(battlerAtk), move, predictedMove, DONT_CONSIDER_PRIORITY)
+                 && AI_IsSlower(battlerAtk, RIGHT_FOE(battlerAtk), move, predictedMove, DONT_CONSIDER_PRIORITY))
+                    ADJUST_SCORE(GOOD_EFFECT);
+                // The partner hits much harder.
+                if (ownHits1 > partnerHits1 && partnerHits1 > 1 && ownHits2 > partnerHits2 && partnerHits2 > 1)
+                    ADJUST_SCORE(GOOD_EFFECT);
+            }
+            else if (IsBattlerAlive(LEFT_FOE(battlerAtk)))
+            {
+                if (CanTargetFaintAi(LEFT_FOE(battlerAtk), battlerAtk)
+                 && AI_IsSlower(battlerAtk, LEFT_FOE(battlerAtk), move, predictedMove, DONT_CONSIDER_PRIORITY))
+                    ADJUST_SCORE(GOOD_EFFECT);
+                if (ownHits1 > partnerHits1 && partnerHits1 > 1)
+                    ADJUST_SCORE(GOOD_EFFECT);
+            }
+            else if (IsBattlerAlive(RIGHT_FOE(battlerAtk)))
+            {
+                if (CanTargetFaintAi(RIGHT_FOE(battlerAtk), battlerAtk)
+                 && AI_IsSlower(battlerAtk, RIGHT_FOE(battlerAtk), move, predictedMove, DONT_CONSIDER_PRIORITY))
+                    ADJUST_SCORE(GOOD_EFFECT);
+                if (ownHits2 > partnerHits2 && partnerHits2 > 1)
+                    ADJUST_SCORE(GOOD_EFFECT);
+            }
+        }
+        break;
+    case EFFECT_PERISH_SONG:
+        if (aiData->partnerMove != MOVE_NONE && HasTrappingMoveEffect(partner))
+            ADJUST_SCORE(WEAK_EFFECT);
+        break;
+    default:
+        break;
+    }
+
+    // Moves that hit both foes and the partner (Earthquake, Magnitude,
+    // Explosion, Selfdestruct): don't knock out the partner for no reason.
+    if ((moveTarget & MOVE_TARGET_FOES_AND_ALLY) && wouldPartnerFaint)
+    {
+        bool32 faintsFoe1 = CanIndexMoveFaintTarget(battlerAtk, BATTLE_OPPOSITE(battlerAtk), moveIndex, AI_ATTACKING);
+        bool32 faintsFoe2 = CanIndexMoveFaintTarget(battlerAtk, BATTLE_OPPOSITE(partner), moveIndex, AI_ATTACKING);
+
+        if (faintsFoe1 && faintsFoe2)
+        {
+            // Knocking out both foes is a good reason.
+            if (!IsExplosionMove(move) || (AI_THINKING_STRUCT->aiLogicFlags & AI_LOGIC_RISKY))
+                RETURN_SCORE_PLUS(10);
+        }
+        else if (CanTargetFaintAi(BATTLE_OPPOSITE(battlerAtk), partner) && CanTargetFaintAi(BATTLE_OPPOSITE(partner), partner))
+        {
+            // The partner is going down anyway: take a foe with it.
+            if (faintsFoe1 || faintsFoe2)
+                ADJUST_SCORE(WEAK_EFFECT);
+        }
+        else if (faintsFoe1 || faintsFoe2)
+        {
+            ADJUST_SCORE(AWFUL_EFFECT); // a trade the player can easily exploit
+        }
+        else
+        {
+            RETURN_SCORE_MINUS(10);
+        }
+    }
+
+    // Moves aimed at the partner.
+    if (IsTargetingPartner(battlerAtk, battlerDef))
+    {
+        isMoveAffectedByPartnerAbility = TRUE;
+
+        if (wouldPartnerFaint)
+            RETURN_SCORE_MINUS(30);
+
+        if (!partnerProtecting && !(moveTarget & MOVE_TARGET_BOTH))
+        {
+            switch (partnerAbility)
+            {
+            case ABILITY_LIGHTNING_ROD:
+                // In Gen 3 Lightning Rod only draws the move in; the partner still takes it.
+                if (moveType == TYPE_ELECTRIC)
+                    RETURN_SCORE_MINUS(10);
+                isMoveAffectedByPartnerAbility = FALSE;
+                break;
+            case ABILITY_VOLT_ABSORB:
+            case ABILITY_WATER_ABSORB:
+                if (moveType == (partnerAbility == ABILITY_VOLT_ABSORB ? TYPE_ELECTRIC : TYPE_WATER))
+                {
+                    if (moveTarget & MOVE_TARGET_FOES_AND_ALLY)
+                        ADJUST_SCORE(DECENT_EFFECT);
+                    else if (ShouldTriggerPartnerAbility(partner, partnerAbility))
+                        RETURN_SCORE_PLUS(WEAK_EFFECT);
+                    else
+                        RETURN_SCORE_MINUS(10);
+                }
+                else
+                {
+                    isMoveAffectedByPartnerAbility = FALSE;
+                }
+                break;
+            case ABILITY_LEVITATE:
+                if (moveType == TYPE_GROUND)
+                {
+                    if (moveTarget & MOVE_TARGET_FOES_AND_ALLY)
+                        ADJUST_SCORE(DECENT_EFFECT);
+                }
+                else
+                {
+                    isMoveAffectedByPartnerAbility = FALSE;
+                }
+                break;
+            case ABILITY_FLASH_FIRE:
+                if (moveType == TYPE_FIRE)
+                {
+                    if (moveTarget & MOVE_TARGET_FOES_AND_ALLY)
+                        ADJUST_SCORE(DECENT_EFFECT);
+                    if (ShouldTriggerPartnerAbility(partner, partnerAbility))
+                        RETURN_SCORE_PLUS(WEAK_EFFECT);
+                }
+                else
+                {
+                    isMoveAffectedByPartnerAbility = FALSE;
+                }
+                break;
+            default:
+                break;
+            }
+        }
+
+        // Moves that help the partner.
+        if (!partnerProtecting)
+        {
+            switch (effect)
+            {
+            case EFFECT_SWAGGER:
+                if (gBattleMons[partner].statStages[STAT_ATK] < MAX_STAT_STAGE
+                 && HasMoveWithCategory(partner, DAMAGE_CATEGORY_PHYSICAL)
+                 && (!AI_CanConfuse(battlerAtk, partner, partnerAbility, move)
+                  || partnerHoldEffect == HOLD_EFFECT_CURE_CONFUSION
+                  || partnerHoldEffect == HOLD_EFFECT_CURE_STATUS))
+                    RETURN_SCORE_PLUS(WEAK_EFFECT);
+                break;
+            case EFFECT_FLATTER:
+                if (gBattleMons[partner].statStages[STAT_SPATK] < MAX_STAT_STAGE
+                 && HasMoveWithCategory(partner, DAMAGE_CATEGORY_SPECIAL)
+                 && (!AI_CanConfuse(battlerAtk, partner, partnerAbility, move)
+                  || partnerHoldEffect == HOLD_EFFECT_CURE_CONFUSION
+                  || partnerHoldEffect == HOLD_EFFECT_CURE_STATUS))
+                    RETURN_SCORE_PLUS(WEAK_EFFECT);
+                break;
+            default:
+                break;
+            }
+        }
+
+        if (!isMoveAffectedByPartnerAbility || score <= AI_SCORE_DEFAULT)
+            RETURN_SCORE_MINUS(10);
+    }
+
     return score;
 }

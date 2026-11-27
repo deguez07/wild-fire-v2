@@ -77,8 +77,9 @@
 #define AI_LOGIC_RISKY                  (1 << 4)  // prefer high-damage, risky moves; assumes high damage rolls
 #define AI_LOGIC_TRY_TO_2HKO            (1 << 5)  // bonus for moves that KO in one or two hits
 #define AI_LOGIC_PREFER_BATON_PASS      (1 << 6)  // set up stats, then Baton Pass
-#define AI_LOGIC_HP_AWARE               (1 << 7)  // choose effects by its own and the target's HP
-#define AI_LOGIC_PREDICT_SWITCH         (1 << 8)  // when it expects the player to switch, prefer moves that punish it
+#define AI_LOGIC_DOUBLE_BATTLE          (1 << 7)  // work with the partner in double battles (added automatically there)
+#define AI_LOGIC_HP_AWARE               (1 << 8)  // choose effects by its own and the target's HP
+#define AI_LOGIC_PREDICT_SWITCH         (1 << 9)  // when it expects the player to switch, prefer moves that punish it
 
 // Switching steps of the ported AI (src/battle_ai_switch.c), picked by level.
 // Levels 1-4 use the vanilla switching.

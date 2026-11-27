@@ -34,13 +34,38 @@ estimates for every move.
 
 Levels 1-4 switch like vanilla FireRed. Level 5 uses the expansion AI's basic
 switching checks (Wonder Guard, Perish Song, Natural Cure, resisting the last
-hit). In double battles, level 5+ picks switch-ins by type matchup and damage;
-the full matchup check is for single battles.
+hit).
 
 From level 4 on, extra flags turn on more of the ported AI:
 `AI_SCRIPT_SETUP_FIRST_TURN` (sets up on turn 1), `AI_SCRIPT_RISKY` (prefers
 risky high-damage moves, assumes high rolls), `AI_SCRIPT_PREFER_STRONGEST_MOVE`
 (the 2-hit KO bonus) and `AI_SCRIPT_PREFER_BATON_PASS` (sets up, then passes).
+
+### Double battles (levels 4+)
+
+Vanilla FireRed picks a random foe to attack in double battles. From level 4
+the AI scores its moves against each foe and its partner, then uses the best
+move on the best target, like the expansion AI. It also works with its
+partner:
+
+- It knows the move its partner picked this turn when the partner chose
+  first (the left mon chooses before the right one). Otherwise it expects the
+  partner's last move.
+- It doesn't repeat what the partner is doing (two weather moves, two
+  Reflects, two Hazes...), avoids status moves when the partner uses Helping
+  Hand, and uses Helping Hand when the partner hits much harder.
+- It traps the target while the partner uses Perish Song.
+- It doesn't use Earthquake or Explosion when they would knock out its
+  partner, unless that also knocks out both foes, or the partner is going
+  down anyway and it takes a foe with it.
+- It aims moves at its partner only on purpose: Water or Electric moves to
+  heal a Water Absorb or Volt Absorb partner, Fire moves to power up a Flash
+  Fire partner, Swagger or Flatter on a partner that can't be confused or holds a berry that
+  cures confusion.
+- Smart switching (level 6+) checks its moves against both foes.
+
+Level 5+ picks switch-ins by type matchup and damage in double battles; the
+full matchup check is for single battles, as in the expansion AI.
 
 ### What the AI knows (levels 4-8)
 
@@ -65,8 +90,8 @@ risky high-damage moves, assumes high rolls), `AI_SCRIPT_PREFER_STRONGEST_MOVE`
 Each turn the AI plays your side once with its own scoring, using only what
 it knows about you, to guess the move you'll pick. That move decides who it
 thinks moves first, whether to Protect, and which mon would absorb your attack.
-In single battles it also runs its own switching checks from your side. When
-those say you should switch, it acts on the prediction half the time:
+It also runs its own switching checks from your side. When those say you
+should switch, it acts on the prediction half the time:
 Pursuit, Spikes, screens and weather become better, and Protect, Counter,
 Encore, Taunt and trapping moves become worse. At level 10 it picks its move
 against the mon it expects you to send in.

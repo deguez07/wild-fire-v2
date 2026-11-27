@@ -477,6 +477,9 @@ static void GetAiFlagsAndLevel(u32 aiFlags, u32 *scriptFlags, u16 *logicFlags, u
                 if (aiFlags & sScriptToLogic[i][0])
                     *logicFlags |= sScriptToLogic[i][1];
             }
+            // Like the expansion AI, double battles add the partner checks.
+            if (gBattleTypeFlags & BATTLE_TYPE_DOUBLE)
+                *logicFlags |= AI_LOGIC_DOUBLE_BATTLE;
             aiFlags = 0;
             *knowledgeFlags = sAiLevelKnowledge[level];
         }

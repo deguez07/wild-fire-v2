@@ -10,8 +10,8 @@
 // move slot. Never reads the move or switch the player picked this turn.
 u8 BattleAI_ChooseMoveIndexWithLogic(void);
 
-// Levels 7+: predicts the move of each of the player's mons and, in single
-// battles, whether it switches and to what. The AI scores the player's side
+// Levels 7+: predicts the move of each of the player's mons and whether it
+// switches and to what. The AI scores the player's side
 // as if it were the AI, with only the moves, items and abilities it knows of.
 // Call after AI_SetLogicDataForTurn; predictions are made once per turn.
 void AI_SetupPredictions(u8 battlerAi);

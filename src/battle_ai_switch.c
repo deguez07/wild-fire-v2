@@ -1013,6 +1013,18 @@ static bool32 ShouldSwitch(u8 battler)
     return FALSE;
 }
 
+// The move's score against the opposing battler, or in double battles the
+// better of its scores against the two foes.
+static s32 GetBestScoreAgainstFoes(u8 battler, u8 moveIndex)
+{
+    u8 opposingBattler = GetOppositeBattler(battler);
+    s32 score = AI_DATA->finalScores[opposingBattler][moveIndex];
+
+    if (IsDoubleBattle() && AI_DATA->finalScores[BATTLE_PARTNER(opposingBattler)][moveIndex] > score)
+        score = AI_DATA->finalScores[BATTLE_PARTNER(opposingBattler)][moveIndex];
+    return score;
+}
+
 // After move scoring: switch if every move is bad, stay in to Baton Pass.
 static bool32 ShouldSwitchIfAllScoresBad(u8 battler)
 {
@@ -1020,7 +1032,7 @@ static bool32 ShouldSwitchIfAllScoresBad(u8 battler)
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
-        if (AI_DATA->moveScores[i] > AI_BAD_SCORE_THRESHOLD)
+        if (GetBestScoreAgainstFoes(battler, i) > AI_BAD_SCORE_THRESHOLD)
             return FALSE;
     }
     return RandomPercentage(SHOULD_SWITCH_ALL_SCORES_BAD_PERCENTAGE);
@@ -1033,7 +1045,7 @@ static bool32 ShouldStayInToUseMove(u8 battler)
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
         if (gBattleMoves[AI_GetMovesArray(battler)[i]].effect == EFFECT_BATON_PASS
-         && AI_DATA->moveScores[i] > AI_GOOD_SCORE_THRESHOLD)
+         && GetBestScoreAgainstFoes(battler, i) > AI_GOOD_SCORE_THRESHOLD)
             return TRUE;
     }
     return FALSE;
@@ -1574,8 +1586,9 @@ bool32 AI_TrySwitchWithLogic(u8 battler)
     if (AI_LOGIC_DATA == NULL)
         return FALSE;
 
-    // Smart switching also looks at how good the mon's moves are, so score them first.
-    if (HasSwitchFlag(AI_SWITCH_SMART_SWITCHING) && !IsDoubleBattle())
+    // Smart switching also looks at how good the mon's moves are, so score them
+    // first (against both foes in a double battle).
+    if (HasSwitchFlag(AI_SWITCH_SMART_SWITCHING))
     {
         BattleAI_SetupAIData();
         if (AI_THINKING_STRUCT->aiLogicFlags != 0)

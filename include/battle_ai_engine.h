@@ -104,6 +104,7 @@ struct AiLogicData
     u16 lastUsedMove[MAX_BATTLERS_COUNT]; // last move each battler used (previous turns only)
     u16 partnerMove;                      // move the AI's partner chose this turn (doubles)
     s32 moveScores[MAX_MON_MOVES];        // scores of the ported AI while it decides
+    s16 finalScores[MAX_BATTLERS_COUNT][MAX_MON_MOVES]; // last scores against each target (0 if not scored)
     u16 prevTurnSpecies[MAX_BATTLERS_COUNT]; // species on the field at the AI's last switch decision
     u8 mostSuitableMonId[MAX_BATTLERS_COUNT]; // best switch-in found by the switching AI, PARTY_SIZE if none
     bool8 shouldConsiderExplosion;        // rolled once per decision, more likely at low HP

@@ -85,6 +85,120 @@ u16 GetIncomingMoveSpeedCheck(u8 battlerAtk, u8 battlerDef)
     return MOVE_NONE;
 }
 
+// The move the AI's partner will use this turn (double battles). The left
+// battler of a side chooses first, so the right one knows its partner's
+// choice; the left one expects the move its partner used last, like the
+// expansion AI. The AI never knows what the player's partner chose.
+u16 GetAllyChosenMove(u8 battler)
+{
+    u8 partner = BATTLE_PARTNER(battler);
+
+    if (!IsDoubleBattle() || !IsBattlerAlive(partner) || GetBattlerSide(battler) == B_SIDE_PLAYER)
+        return MOVE_NONE;
+    if (partner > battler)
+        return AI_DATA->lastUsedMove[partner];
+    if (gChosenActionByBattler[partner] != B_ACTION_USE_MOVE)
+        return MOVE_NONE;
+    return gChosenMoveByBattler[partner];
+}
+
+// Groups of moves that do the same thing to the field, as in the expansion AI.
+#define AI_EFFECT_NONE           0
+#define AI_EFFECT_WEATHER        (1 << 0)
+#define AI_EFFECT_CLEAR_HAZARDS  (1 << 1)
+#define AI_EFFECT_BREAK_SCREENS  (1 << 2)
+#define AI_EFFECT_RESET_STATS    (1 << 3)
+#define AI_EFFECT_FORCE_SWITCH   (1 << 4)
+#define AI_EFFECT_TORMENT        (1 << 5)
+#define AI_EFFECT_LIGHT_SCREEN   (1 << 6)
+#define AI_EFFECT_REFLECT        (1 << 7)
+#define AI_EFFECT_CHANGE_ABILITY (1 << 8)
+
+static u32 GetAIEffectGroup(u16 move)
+{
+    switch (gBattleMoves[move].effect)
+    {
+    case EFFECT_RAIN_DANCE:
+    case EFFECT_SUNNY_DAY:
+    case EFFECT_SANDSTORM:
+    case EFFECT_HAIL:
+        return AI_EFFECT_WEATHER;
+    case EFFECT_RAPID_SPIN:
+        return AI_EFFECT_CLEAR_HAZARDS;
+    case EFFECT_BRICK_BREAK:
+        return AI_EFFECT_BREAK_SCREENS;
+    case EFFECT_HAZE:
+        return AI_EFFECT_RESET_STATS;
+    case EFFECT_ROAR:
+        return AI_EFFECT_FORCE_SWITCH;
+    case EFFECT_TORMENT:
+        return AI_EFFECT_TORMENT;
+    case EFFECT_LIGHT_SCREEN:
+        return AI_EFFECT_LIGHT_SCREEN;
+    case EFFECT_REFLECT:
+        return AI_EFFECT_REFLECT;
+    case EFFECT_ROLE_PLAY:
+    case EFFECT_SKILL_SWAP:
+        return AI_EFFECT_CHANGE_ABILITY;
+    default:
+        return AI_EFFECT_NONE;
+    }
+}
+
+// Would the move only repeat what the partner's move does (two weather moves,
+// two Reflects, two Roars on the same target)?
+bool32 AreMovesEquivalent(u8 battlerAtk, u8 battlerDef, u8 battlerAtkPartner, u16 move, u16 partnerMove)
+{
+    if (!IsBattlerAlive(battlerAtkPartner) || partnerMove == MOVE_NONE)
+        return FALSE;
+    // The best attack is worth using anyway.
+    if (IsBestDmgMove(battlerAtk, battlerDef, AI_ATTACKING, move))
+        return FALSE;
+    if (!(GetAIEffectGroup(move) & GetAIEffectGroup(partnerMove)))
+        return FALSE;
+    if (gBattleMoves[move].target == MOVE_TARGET_SELECTED && gBattleMoves[partnerMove].target == MOVE_TARGET_SELECTED)
+        return battlerDef == gBattleStruct->moveTarget[battlerAtkPartner];
+    return TRUE;
+}
+
+// The fewest hits any of the attacker's moves needs to KO the target (100 if none can).
+u32 GetBestNoOfHitsToKO(u8 battlerAtk, u8 battlerDef, u8 calcContext)
+{
+    u16 *moves = AI_GetMovesArray(battlerAtk);
+    u8 moveLimitations = AI_DATA->moveLimitations[battlerAtk];
+    u32 result = 100, hits;
+    u8 i;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (IsMoveUnusable(i, moves[i], moveLimitations))
+            continue;
+        hits = GetNoOfHitsToKOBattler(battlerAtk, battlerDef, i, calcContext, CONSIDER_ENDURE);
+        if (hits != 0 && hits < result)
+            result = hits;
+    }
+    return result;
+}
+
+// Mean Look, Block, Spider Web, and Wrap and the other binding moves.
+bool32 IsTrappingMove(u16 move)
+{
+    return gBattleMoves[move].effect == EFFECT_MEAN_LOOK || gBattleMoves[move].effect == EFFECT_TRAP;
+}
+
+bool32 HasTrappingMoveEffect(u8 battler)
+{
+    u16 *moves = AI_GetMovesArray(battler);
+    u8 i;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (moves[i] != MOVE_NONE && moves[i] != MOVE_UNAVAILABLE && IsTrappingMove(moves[i]))
+            return TRUE;
+    }
+    return FALSE;
+}
+
 // Does the AI act on a predicted switch of this battler this turn?
 bool32 IsBattlerPredictedToSwitch(u8 battler)
 {
