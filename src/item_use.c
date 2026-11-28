@@ -715,11 +715,21 @@ static void Task_UseFameCheckerFromField(u8 taskId)
     }
 }
 
+// Underground maps where the VS Seeker is allowed despite their map type.
+static bool8 IsVsSeekerAllowedUndergroundMap(void)
+{
+    return gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_MT_MOON_1F)
+        && (gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_MT_MOON_1F)
+         || gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_MT_MOON_B1F)
+         || gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_MT_MOON_B2F));
+}
+
 void FieldUseFunc_VsSeeker(u8 taskId)
 {
     if ((gMapHeader.mapType != MAP_TYPE_ROUTE
       && gMapHeader.mapType != MAP_TYPE_TOWN
-      && gMapHeader.mapType != MAP_TYPE_CITY)
+      && gMapHeader.mapType != MAP_TYPE_CITY
+      && !IsVsSeekerAllowedUndergroundMap())
      || (gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_MT_EMBER_EXTERIOR)
       && (gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_MT_EMBER_EXTERIOR)
        || gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_THREE_ISLAND_BERRY_FOREST)

@@ -941,6 +941,8 @@ static const struct SpriteFrameImage sPicTable_RocketM[] = {
     overworld_frame(gObjectEventPic_RocketM, 2, 4, 6),
     overworld_frame(gObjectEventPic_RocketM, 2, 4, 7),
     overworld_frame(gObjectEventPic_RocketM, 2, 4, 8),
+    // No raised-hand art: reuse the front-facing frame for VS Seeker rematches.
+    overworld_frame(gObjectEventPic_RocketM, 2, 4, 0),
 };
 
 static const struct SpriteFrameImage sPicTable_Celio[] = {
