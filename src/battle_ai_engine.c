@@ -1257,8 +1257,6 @@ u32 AI_GetBattlerSpeed(u8 battler)
           * (gStatStageRatios[gBattleMons[battler].statStages[STAT_SPEED]][0])
           / (gStatStageRatios[gBattleMons[battler].statStages[STAT_SPEED]][1]);
 
-    if (!(gBattleTypeFlags & BATTLE_TYPE_LINK) && FlagGet(FLAG_BADGE03_GET) && GetBattlerSide(battler) == B_SIDE_PLAYER)
-        speed = (speed * 110) / 100;
     if (holdEffect == HOLD_EFFECT_MACHO_BRACE)
         speed /= 2;
     if (gBattleMons[battler].status1 & STATUS1_PARALYSIS)
